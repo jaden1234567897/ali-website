@@ -1859,3 +1859,50 @@ h1 span {
   .footer-marquee-track { animation: none; }
   .footer-aurora        { animation: none; }
 }
+
+.engraving-test-page {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 54% 38%, oklch(0.23 0.018 235 / 0.5), transparent 34%),
+    linear-gradient(180deg, #020709 0%, #000 100%);
+}
+
+.engraving-test-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-size: 74px 74px;
+  background-image:
+    linear-gradient(to right, oklch(1 0 0 / 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(1 0 0 / 0.02) 1px, transparent 1px);
+  mask-image: linear-gradient(to bottom, transparent, black 24%, black 76%, transparent);
+}
+
+.engraving-test-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.engraving-test-meta {
+  position: absolute;
+  left: clamp(18px, 4vw, 56px);
+  bottom: clamp(18px, 4vw, 48px);
+  display: grid;
+  gap: 4px;
+  color: oklch(0.86 0.02 230);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.engraving-test-meta strong {
+  color: white;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+}
