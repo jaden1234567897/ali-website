@@ -30,11 +30,7 @@ const bridgePoses: Pose[] = [
   { x: 0.19, y: -0.19, z: -0.36, s: 0.7, rx: Math.PI / 2, ry: 0.08, rz: -1.08 },
 ]
 
-const engravedCoinFiles = [
-  '/engraved-coins/coin-strategy.glb',
-  '/engraved-coins/coin-governance.glb',
-  '/engraved-coins/coin-execution.glb',
-]
+const coinLabels = ['STRATEGY', 'GOVERNANCE', 'EXECUTION']
 
 function clamp(value: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value))
@@ -162,25 +158,60 @@ export default function CoinField() {
         }
       }
 
-      const loader = new GLTFLoader()
-      engravedCoinFiles.forEach((file, index) => {
-        loader.load(file, gltf => {
-          if (disposed) return
+      const createLabelTexture = (label: string) => {
+        const canvas = document.createElement('canvas')
+        canvas.width = 1024
+        canvas.height = 256
+        const context = canvas.getContext('2d')
 
+        if (context) {
+          context.clearRect(0, 0, canvas.width, canvas.height)
+          context.fillStyle = '#202328'
+          context.font = '700 104px Arial, sans-serif'
+          context.textAlign = 'center'
+          context.textBaseline = 'middle'
+          context.fillText(label, canvas.width / 2, canvas.height / 2 + 4)
+        }
+
+        const texture = new THREE.CanvasTexture(canvas)
+        texture.colorSpace = THREE.SRGBColorSpace
+        texture.anisotropy = 8
+        texture.needsUpdate = true
+        return texture
+      }
+
+      new GLTFLoader().load('/silver_coin.glb', gltf => {
+        if (disposed) return
+
+        const proto = gltf.scene
+        const box = new THREE.Box3().setFromObject(proto)
+        const center = box.getCenter(new THREE.Vector3())
+        const size = box.getSize(new THREE.Vector3())
+        const maxAxis = Math.max(size.x, size.y, size.z) || 1
+        const faceZ = (size.z / maxAxis) * 0.71 + 0.012
+
+        initialPoses.forEach((_, index) => {
           const outer = new THREE.Group()
           const inner = new THREE.Group()
-          const model = gltf.scene
-          const box = new THREE.Box3().setFromObject(model)
-          const center = box.getCenter(new THREE.Vector3())
-          const size = box.getSize(new THREE.Vector3())
-          const maxAxis = Math.max(size.x, size.y, size.z) || 1
+          const model = proto.clone(true)
+          const label = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.92, 0.22),
+            new THREE.MeshBasicMaterial({
+              map: createLabelTexture(coinLabels[index]),
+              transparent: true,
+              depthWrite: false,
+              side: THREE.DoubleSide,
+            }),
+          )
 
           model.position.sub(center)
           model.scale.setScalar(1.42 / maxAxis)
+          label.position.z = faceZ
           inner.add(model)
+          inner.add(label)
           outer.add(inner)
           rig.add(outer)
-          groups[index] = { outer, inner }
+          groups.push({ outer, inner })
         })
       })
 
