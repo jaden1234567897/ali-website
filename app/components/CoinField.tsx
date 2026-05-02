@@ -30,6 +30,12 @@ const bridgePoses: Pose[] = [
   { x: 0.19, y: -0.19, z: -0.36, s: 0.7, rx: Math.PI / 2, ry: 0.08, rz: -1.08 },
 ]
 
+const engravedCoinFiles = [
+  '/engraved-coins/coin-strategy.glb',
+  '/engraved-coins/coin-governance.glb',
+  '/engraved-coins/coin-execution.glb',
+]
+
 function clamp(value: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value))
 }
@@ -156,25 +162,25 @@ export default function CoinField() {
         }
       }
 
-      new GLTFLoader().load('/silver_coin.glb', gltf => {
-        if (disposed) return
+      const loader = new GLTFLoader()
+      engravedCoinFiles.forEach((file, index) => {
+        loader.load(file, gltf => {
+          if (disposed) return
 
-        const proto = gltf.scene
-        const box = new THREE.Box3().setFromObject(proto)
-        const center = box.getCenter(new THREE.Vector3())
-        const size = box.getSize(new THREE.Vector3())
-        const maxAxis = Math.max(size.x, size.y, size.z) || 1
-
-        initialPoses.forEach(() => {
           const outer = new THREE.Group()
           const inner = new THREE.Group()
-          const model = proto.clone(true)
+          const model = gltf.scene
+          const box = new THREE.Box3().setFromObject(model)
+          const center = box.getCenter(new THREE.Vector3())
+          const size = box.getSize(new THREE.Vector3())
+          const maxAxis = Math.max(size.x, size.y, size.z) || 1
+
           model.position.sub(center)
           model.scale.setScalar(1.42 / maxAxis)
           inner.add(model)
           outer.add(inner)
           rig.add(outer)
-          groups.push({ outer, inner })
+          groups[index] = { outer, inner }
         })
       })
 
