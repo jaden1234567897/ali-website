@@ -1,27 +1,28 @@
 import { CalendarClock } from 'lucide-react'
-import BridgeGapSection from './components/BridgeGapSection'
 import CoinField from './components/CoinField'
+import AliNav from './components/ali/AliNav'
+import AliNovaTransition from './components/ali/AliNovaTransition'
+import AliAbout from './components/ali/AliAbout'
+import AliCoreProducts from './components/ali/AliCoreProducts'
+import AliBridge from './components/ali/AliBridge'
+import AliCurvedAI from './components/ali/AliCurvedAI'
+import AliServices from './components/ali/AliServices'
+import AliProcess from './components/ali/AliProcess'
+import AliTestimonials from './components/ali/AliTestimonials'
+import AliCourseTeaser from './components/ali/AliCourseTeaser'
+import AliBooking from './components/ali/AliBooking'
+import AliCinematicFooter from './components/ali/AliCinematicFooter'
+import AliWhatsAppFloat from './components/ali/AliWhatsAppFloat'
 
 export const frameCache: (ImageBitmap | null)[] = Array.from({ length: 193 }, () => null)
 
 export default function Home() {
   return (
-    <div className="site-shell">
+    <div className="ali-site site-shell">
+      {/* Hero — 3D coin field + butterfly motion (untouched) */}
       <CoinField />
 
-      <header className="site-nav nova-nav">
-        <a className="brand" href="#top" aria-label="Ali Al-Ali home">
-          <strong>Ali Al-Ali</strong>
-          <span>Strategy Execution</span>
-        </a>
-        <nav aria-label="Primary navigation">
-          <a href="#about">About</a>
-          <a href="#course">Course</a>
-          <a href="#advisory">Advisory</a>
-          <a href="#process">Process</a>
-          <a href="#contact">Contact</a>
-        </nav>
-      </header>
+      <AliNav />
 
       <main id="top">
         <div className="hero-scroll-stage">
@@ -42,7 +43,7 @@ export default function Home() {
                 <br />
                 execution that delivers.
               </p>
-              <a className="primary-action nova-start" href="#contact">
+              <a className="primary-action nova-start" href="#book">
                 <CalendarClock size={16} />
                 Let&apos;s Start
               </a>
@@ -50,8 +51,31 @@ export default function Home() {
           </section>
         </div>
 
-        <BridgeGapSection />
+        {/* Coin detach: 3 coins separate → Strategy fills screen → fades to cream */}
+        <AliNovaTransition />
+
+        {/* About Ali — cinematic pinned reveal (replaces the Bridging the Gap timeline) */}
+        <AliAbout />
+
+        {/* Core products — 3D books that open on hover */}
+        <AliCoreProducts />
+
+        {/* Bridge — pinned scroll: text reveal + 3 coins forming a bridge with AI as keystone */}
+        <AliBridge />
+
+        {/* Curved AI screenshot slider */}
+        <AliCurvedAI />
+
+        <AliServices />
+        <AliProcess />
+        <AliTestimonials />
+        <AliCourseTeaser />
+        <AliBooking />
       </main>
+
+      {/* Cinematic curtain-reveal footer with magnetic pills */}
+      <AliCinematicFooter />
+      <AliWhatsAppFloat />
     </div>
   )
 }

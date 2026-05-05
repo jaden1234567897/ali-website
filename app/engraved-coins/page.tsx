@@ -6,7 +6,7 @@ export default function EngravedCoinsPage() {
       <EngravedCoinPreview />
       <div className="specimen-label">
         <span>Generated assets</span>
-        <strong>Governance / Execution / Strategy</strong>
+        <strong>Artificial Intelligence / Execution / Strategy</strong>
         <em>Same coin, dark inset text preview.</em>
       </div>
     </main>

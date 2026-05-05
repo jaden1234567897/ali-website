@@ -18,19 +18,33 @@ const initialPoses: Pose[] = [
   { x: 0.14, y: -0.08, z: -0.28, s: 1.36, rx: 0.03, ry: 0.08, rz: 0.03 },
 ]
 
+// Portrait mobile layout — Strategy ABOVE the hero title, then AI and
+// Execution sit in the gap BETWEEN the title and the aside paragraph.
+// y values calibrated so AI/Execution land at ~10–20 % below screen
+// centre (the empty band between title and aside on a typical phone).
+const initialPosesMobile: Pose[] = [
+  // Strategy: top centre, sits directly above the word "Strategy" in
+  // the hero title with a small gap — close but not overlapping.
+  { x: 0, y: 0.24, z: -0.55, s: 1.05, rx: 0.03, ry: 0, rz: 0 },
+  // AI: between title and aside, left
+  { x: -0.18, y: -0.08, z: -0.20, s: 1.0, rx: 0.03, ry: -0.06, rz: 0 },
+  // Execution: between title and aside, right
+  { x: 0.18, y: -0.08, z: -0.25, s: 1.0, rx: 0.03, ry: 0.06, rz: 0 },
+]
+
 const butterflyPoses: Pose[] = [
-  { x: 0, y: 0.015, z: -0.42, s: 1.42, rx: Math.PI / 2, ry: 0.04, rz: Math.PI / 3 },
+  { x: 0, y: 0.015, z: -0.38, s: 1.5, rx: Math.PI / 2, ry: 0.04, rz: Math.PI / 3 },
   { x: 0, y: 0, z: -0.34, s: 1.5, rx: Math.PI / 2, ry: 0, rz: 0 },
-  { x: 0, y: -0.015, z: -0.38, s: 1.42, rx: Math.PI / 2, ry: -0.04, rz: -Math.PI / 3 },
+  { x: 0, y: -0.015, z: -0.38, s: 1.5, rx: Math.PI / 2, ry: -0.04, rz: -Math.PI / 3 },
 ]
 
-const bridgePoses: Pose[] = [
-  { x: 0, y: 0.32, z: -0.44, s: 0.72, rx: Math.PI / 2, ry: 0.03, rz: 0 },
-  { x: -0.19, y: -0.19, z: -0.34, s: 0.7, rx: Math.PI / 2, ry: -0.08, rz: 1.08 },
-  { x: 0.19, y: -0.19, z: -0.36, s: 0.7, rx: Math.PI / 2, ry: 0.08, rz: -1.08 },
-]
+const coinLabels = ['STRATEGY', 'ARTIFICIAL INTELLIGENCE', 'EXECUTION']
 
-const coinLabels = ['STRATEGY', 'GOVERNANCE', 'EXECUTION']
+declare global {
+  interface Window {
+    __aliNovaProgress?: number
+  }
+}
 
 function clamp(value: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value))
@@ -43,38 +57,6 @@ function smoothstep(edge0: number, edge1: number, value: number) {
 
 function mix(a: number, b: number, progress: number) {
   return a + (b - a) * progress
-}
-
-function routeX(progress: number, mobile: boolean) {
-  const left = mobile ? -0.012 : -0.19
-  const right = mobile ? 0.012 : 0.19
-
-  if (progress < 0.34) return mix(0, left, smoothstep(0, 0.34, progress))
-  if (progress < 0.72) return mix(left, right, smoothstep(0.34, 0.72, progress))
-  return mix(right, 0, smoothstep(0.72, 1, progress))
-}
-
-function routeY(progress: number, mobile: boolean) {
-  const leftDrop = mobile ? 0.004 : 0.026
-  const rightLift = mobile ? -0.005 : -0.026
-  const centerDrop = mobile ? 0.002 : 0.01
-
-  if (progress < 0.34) return mix(0, leftDrop, smoothstep(0, 0.34, progress))
-  if (progress < 0.72) return mix(leftDrop, rightLift, smoothstep(0.34, 0.72, progress))
-  return mix(rightLift, centerDrop, smoothstep(0.72, 1, progress))
-}
-
-function bridgeTilt(progress: number) {
-  const leftTilt = -0.06
-  const rightTilt = 0.06
-
-  if (progress < 0.34) return mix(0, leftTilt, smoothstep(0, 0.34, progress))
-  if (progress < 0.72) return mix(leftTilt, rightTilt, smoothstep(0.34, 0.72, progress))
-  return mix(rightTilt, 0, smoothstep(0.72, 1, progress))
-}
-
-function coinSpin(progress: number) {
-  return smoothstep(0.34, 1, progress) * Math.PI * 2.2
 }
 
 export default function CoinField() {
@@ -133,44 +115,58 @@ export default function CoinField() {
       const rig = new THREE.Group()
       scene.add(rig)
 
-      const groups: { outer: import('three').Group; inner: import('three').Group }[] = []
+      const groups: { outer: import('three').Group; inner: import('three').Group; labelMaterial: import('three').MeshBasicMaterial }[] = []
       const targetProgress = { current: 0 }
       const easedProgress = { current: 0 }
-      const targetBridgeProgress = { current: 0 }
-      const easedBridgeProgress = { current: 0 }
-      const bridgeVisible = { current: false }
+      const targetCanvasOpacity = { current: 0.98 }
+      const easedCanvasOpacity = { current: 0.98 }
+      const pointerTarget = { x: 0, y: 0, active: 0 }
+      const pointer = { x: 0, y: 0, active: 0 }
 
       const updateScrollProgress = () => {
         const stage = document.querySelector<HTMLElement>('.hero-scroll-stage')
-        const scrollable = stage ? Math.max(1, stage.offsetHeight - window.innerHeight) : Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
-        const rawProgress = stage ? -stage.getBoundingClientRect().top / scrollable : window.scrollY / scrollable
-        const bridge = document.querySelector<HTMLElement>('.coin-motion-section')
-        const bridgeRect = bridge?.getBoundingClientRect()
-        const bridgeHeight = bridge ? Math.max(1, bridge.offsetHeight) : 1
+        // Use the full stage height (not minus viewport) so hero progress reaches 1
+        // exactly when the nova section's top hits the viewport — eliminating the
+        // 100 vh frozen gap between the hero roll completing and the nova pin starting.
+        const scrollable = stage ? Math.max(1, stage.offsetHeight) : Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+        const stageRect = stage?.getBoundingClientRect()
+        const rawProgress = stage && stageRect ? -stageRect.top / scrollable : window.scrollY / scrollable
         const progress = clamp(rawProgress)
 
         targetProgress.current = progress
-        targetBridgeProgress.current = bridge && bridgeRect ? clamp((window.innerHeight - bridgeRect.top) / bridgeHeight) : 0
-        bridgeVisible.current = !!bridgeRect && bridgeRect.top < window.innerHeight && bridgeRect.bottom > 0
 
         if (canvasRef.current) {
-          canvasRef.current.style.opacity = '0.72'
+          const transition = document.querySelector<HTMLElement>('.ali-nova-transition')
+          const transitionRect = transition?.getBoundingClientRect()
+          const transitionVisible = !!transitionRect && transitionRect.top < window.innerHeight && transitionRect.bottom > 0
+          const heroVisibility = stageRect ? smoothstep(0.08, 0.52, clamp(stageRect.bottom / window.innerHeight)) : 1
+          targetCanvasOpacity.current = Math.max(0.92 * heroVisibility, transitionVisible ? 0.98 : 0)
         }
       }
 
       const createLabelTexture = (label: string) => {
+        const longLabel = label.length > 12
         const canvas = document.createElement('canvas')
         canvas.width = 1024
         canvas.height = 256
         const context = canvas.getContext('2d')
 
         if (context) {
+          const fontSize = 125
+          // Reduced long-label padding so "ARTIFICIAL INTELLIGENCE" gets
+          // more horizontal room — the canvas-scale compression is gentler,
+          // so the text reads more stretched and clearer on the coin.
+          const maxTextWidth = canvas.width - (longLabel ? 20 : 0)
           context.clearRect(0, 0, canvas.width, canvas.height)
           context.fillStyle = '#202328'
-          context.font = '700 104px Arial, sans-serif'
+          context.font = `700 ${fontSize}px Arial, sans-serif`
           context.textAlign = 'center'
           context.textBaseline = 'middle'
-          context.fillText(label, canvas.width / 2, canvas.height / 2 + 4)
+          context.save()
+          context.translate(canvas.width / 2, canvas.height / 2 + 4)
+          context.scale(Math.min(1, maxTextWidth / context.measureText(label).width), 1)
+          context.fillText(label, 0, 0)
+          context.restore()
         }
 
         const texture = new THREE.CanvasTexture(canvas)
@@ -188,7 +184,8 @@ export default function CoinField() {
         const center = box.getCenter(new THREE.Vector3())
         const size = box.getSize(new THREE.Vector3())
         const maxAxis = Math.max(size.x, size.y, size.z) || 1
-        const faceZ = (size.z / maxAxis) * 0.71 + 0.012
+        const coinDepth = 0.35
+        const faceZ = (size.z / maxAxis) * 0.71 * coinDepth + 0.012
 
         initialPoses.forEach((_, index) => {
           const outer = new THREE.Group()
@@ -205,13 +202,14 @@ export default function CoinField() {
           )
 
           model.position.sub(center)
-          model.scale.setScalar(1.42 / maxAxis)
+          const normalizedScale = 1.42 / maxAxis
+          model.scale.set(normalizedScale, normalizedScale, normalizedScale * coinDepth)
           label.position.z = faceZ
           inner.add(model)
           inner.add(label)
           outer.add(inner)
           rig.add(outer)
-          groups.push({ outer, inner })
+          groups.push({ outer, inner, labelMaterial: label.material as import('three').MeshBasicMaterial })
         })
       })
 
@@ -223,6 +221,20 @@ export default function CoinField() {
         camera.updateProjectionMatrix()
         renderer.setSize(window.innerWidth, window.innerHeight)
         updateScrollProgress()
+      }
+
+      const updatePointer = (event: PointerEvent) => {
+        if (window.innerWidth < 760) return
+
+        pointerTarget.x = (event.clientX / window.innerWidth - 0.5) * 2
+        pointerTarget.y = (event.clientY / window.innerHeight - 0.5) * 2
+        pointerTarget.active = 1
+      }
+
+      const releasePointer = () => {
+        pointerTarget.x = 0
+        pointerTarget.y = 0
+        pointerTarget.active = 0
       }
 
       const viewportAtZ = (z: number) => {
@@ -239,93 +251,198 @@ export default function CoinField() {
         const tablet = window.innerWidth >= 760 && window.innerWidth < 1120
 
         const follow = reduced ? 1 : 1 - Math.exp(-delta * 7.5)
+        const pointerFollow = reduced ? 1 : 1 - Math.exp(-delta * 5.2)
         easedProgress.current += (targetProgress.current - easedProgress.current) * follow
-        easedBridgeProgress.current += (targetBridgeProgress.current - easedBridgeProgress.current) * follow
+        easedCanvasOpacity.current += (targetCanvasOpacity.current - easedCanvasOpacity.current) * follow
+        pointer.x += (pointerTarget.x - pointer.x) * pointerFollow
+        pointer.y += (pointerTarget.y - pointer.y) * pointerFollow
+        pointer.active += (pointerTarget.active - pointer.active) * pointerFollow
 
-        const scroll = easedProgress.current
-        const bridge = easedBridgeProgress.current
-        const preBridge = smoothstep(0.76, 0.98, scroll)
-        const motion = Math.max(preBridge * 0.34, bridge)
-        const inBridge = motion > 0.001 || bridgeVisible.current
-        const close = smoothstep(0.02, 0.58, scroll)
-        const detach = smoothstep(0, 0.34, motion)
-        const roll = reduced ? 0 : smoothstep(0.58, 1, scroll)
-        const copyHide = smoothstep(0.16, 0.48, scroll)
+        // Both sides of the hero→nova boundary read raw scroll-linked values
+        // (no easing) so their rates are identical at the handoff. Easing on
+        // either side caused a tiny visual jump: hero was decelerating toward
+        // its asymptote (easedProgress ~0.99) while nova fired at full rate
+        // (rawNova ≥ 0.001), creating a ~6° rig.z mismatch in one frame.
+        const scroll = targetProgress.current
+        const rawNova = clamp(window.__aliNovaProgress ?? 0)
+        const nova = rawNova
+        const novaActive = rawNova > 0.001
+        // Roll uses LINEAR mapping over the full hero scroll — constant
+        // rotation per scroll-unit, no easing curves that would feel like
+        // pauses at start or end. close still uses smoothstep for a natural
+        // gather, but the spin runs continuously alongside it. This puts the
+        // hero pace at ≈864 px / turn (240 svh × 1080 px / 3 turns), which
+        // matches nova reverse-roll's 880 px / turn within ~2 %.
+        const close = smoothstep(0.02, 0.40, scroll)
+        const roll = reduced ? 0 : scroll
+        const copyHide = smoothstep(0.08, 0.32, scroll)
+        const hoverStrength = reduced || mobile ? 0 : pointer.active
+        // Nova phases — fade now ENDS exactly when motion ends, so Strategy
+        // is rotating + zooming + fading at the same time (no static pause).
+        // Phases are scaled to a 2900 px nova pin (see AliNovaTransition.tsx)
+        // so the buffer after fade is only ~0.4 vh of empty scroll.
+        //   0.00 → 0.56: reverse hero roll + Strategy pulls toward camera (1.5 vh)
+        //   0.56 → 0.85: Strategy zooms to peak POV (~0.78 vh)
+        //   0.41 → 0.85: label AND canvas fade together (1.21 vh) — overlaps
+        //                end of reverse and ALL of expand, ends with motion
+        //   0.85 → 1.00: ~0.4 vh buffer before pin releases, About visible
+        const reverseRollPhase = clamp(nova / 0.56)
+        const expandPhase = clamp((nova - 0.56) / 0.29)
+        const timelineFade = smoothstep(0.41, 0.85, nova)
+        const labelFade = 1 - smoothstep(0.41, 0.85, nova)
+        const canvasFade = novaActive ? mix(1, 0, timelineFade) : 1
+
+        if (canvasRef.current) {
+          canvasRef.current.style.opacity = (easedCanvasOpacity.current * canvasFade).toFixed(3)
+        }
 
         document.documentElement.style.setProperty('--hero-copy-hide', copyHide.toFixed(4))
 
-        if (inBridge) {
-          const viewport = viewportAtZ(-0.38)
-          const xRoute = routeX(motion, mobile)
-          const yRoute = routeY(motion, mobile)
-          const tilt = reduced ? 0 : bridgeTilt(motion)
-          const transition = smoothstep(0, 0.2, motion)
-          const heroRx = reduced ? 0 : Math.sin(roll * Math.PI) * 0.1
-          const heroRy = reduced ? 0 : Math.sin(roll * Math.PI * 1.1) * 0.16
-          const heroRz = roll * Math.PI * 2
-          const sculptureRoll = reduced ? 0 : Math.sin(coinSpin(motion)) * 0.26
-          const sculpturePitch = reduced ? 0 : Math.cos(coinSpin(motion) * 0.8) * 0.08
-          const bridgeRx = sculpturePitch
-          const bridgeRy = sculptureRoll
-
-          rig.position.set(xRoute * viewport.width, yRoute * viewport.height, -0.02)
-          rig.rotation.set(
-            mix(heroRx, bridgeRx, transition),
-            mix(heroRy, bridgeRy, transition),
-            mix(heroRz, tilt, transition),
-          )
+        if (novaActive) {
+          // hero final Z = 6π ≡ 0 (mod 2π), so no visible snap when switching branch.
+          // A gentle time-based breathe gives the star formation life before the split.
+          // Rig keeps spinning FORWARD through the whole nova phase — same
+          // direction as the hero roll. The "reverse" is purely in the coin
+          // poses (star → triangle, edge-on → face-on); the rig never flips
+          // direction, so there's no momentary pause at the boundary.
+          // Hero ends at 3π; nova continues from 3π → 6π → 6.7π.
+          const heroExitZ = Math.PI * 3
+          const continuedSpin = heroExitZ + reverseRollPhase * Math.PI * 3 + expandPhase * Math.PI * 0.7
+          rig.position.set(0, 0, -0.02)
+          rig.scale.setScalar(1)
+          rig.rotation.set(0, 0, continuedSpin)
         } else {
           rig.position.set(0, 0, -0.02)
+          rig.scale.setScalar(1)
+          // 1.5 full turns over the hero scroll. Both X and Y wobble use the
+          // same sin(roll*π) curve so they return cleanly to 0 at roll=1,
+          // matching the nova rig's starting X/Y of 0 — no jitter at the boundary.
           rig.rotation.set(
-            reduced ? 0 : Math.sin(roll * Math.PI) * 0.1,
-            reduced ? 0 : Math.sin(roll * Math.PI * 1.1) * 0.16,
-            roll * Math.PI * 2,
+            (reduced ? 0 : Math.sin(roll * Math.PI) * 0.1) - pointer.y * 0.055 * hoverStrength,
+            (reduced ? 0 : Math.sin(roll * Math.PI) * 0.16) + pointer.x * 0.075 * hoverStrength,
+            roll * Math.PI * 3,
           )
         }
 
-        groups.forEach(({ outer, inner }, index) => {
-          const heroStart = initialPoses[index]
+        groups.forEach(({ outer, inner, labelMaterial }, index) => {
+          const heroStart = mobile ? initialPosesMobile[index] : initialPoses[index]
           const heroEnd = butterflyPoses[index]
-          const bridgeEnd = bridgePoses[index]
-          const start = inBridge ? heroEnd : heroStart
-          const end = inBridge ? bridgeEnd : heroEnd
-          const shapeProgress = inBridge ? detach : close
-          const z = mix(start.z, end.z, shapeProgress)
+          const start = novaActive ? heroEnd : heroStart
+          const end = heroEnd
+          const shapeProgress = novaActive ? 1 : close
+          let z = mix(start.z, end.z, shapeProgress)
           const viewport = viewportAtZ(z)
-          const mobileSpread = mobile ? 0.78 : tablet ? 0.88 : 1
-          const mobileLift = mobile ? -0.08 : 0
-          const bridgeSpread = mobile ? 0.5 : tablet ? 0.68 : 0.72
-          const responsiveScale = mobile ? 0.56 : tablet ? 0.78 : 1
-          const bridgeScale = mobile ? 0.5 : tablet ? 0.64 : 0.68
-          const breath = reduced || inBridge ? 0 : Math.sin(time * 0.32 + index * 1.6) * 0.012 * (1 - close)
-          const drift = reduced || inBridge ? 0 : Math.cos(time * 0.2 + index * 1.1) * 0.012 * (1 - close)
-          const butterflyFlutter = reduced || inBridge ? 0 : Math.sin(time * 0.95 + index * 0.7) * 0.022 * roll
-          const spin = coinSpin(motion)
-          const travelStarted = smoothstep(0.34, 1, motion)
-          const scrollSpin = reduced || !inBridge ? 0 : Math.sin(spin + index * 0.45) * 0.055 * travelStarted
-          const rimRoll = reduced || !inBridge ? 0 : Math.cos(spin + index * 0.35) * 0.035 * travelStarted
-          const spread = inBridge ? bridgeSpread : mobileSpread
-          const lift = inBridge ? 0 : mobileLift
+          // Mobile uses pre-calibrated initialPosesMobile so spread/lift
+          // are 1 / 0 — no extra position scaling on top of the explicit
+          // x,y values above.
+          const mobileSpread = mobile ? 1 : tablet ? 0.88 : 1
+          const mobileLift = 0
+          const responsiveScale = mobile ? 0.5 : tablet ? 0.78 : 1
+          const hoverScale = 1 + hoverStrength * 0.018
+          const hoverX = pointer.x * viewport.width * 0.01 * hoverStrength * (index === 0 ? 0.72 : 1)
+          const hoverY = -pointer.y * viewport.height * 0.008 * hoverStrength * (index === 0 ? 0.72 : 1)
+          const breath = reduced ? 0 : Math.sin(time * 0.32 + index * 1.6) * 0.012 * (1 - close)
+          const drift = reduced ? 0 : Math.cos(time * 0.2 + index * 1.1) * 0.012 * (1 - close)
+          const butterflyFlutter = reduced ? 0 : Math.sin(time * 0.95 + index * 0.7) * 0.022 * roll
 
-          outer.position.set(
-            mix(start.x, end.x, shapeProgress) * viewport.width * spread + drift,
-            mix(start.y + lift, end.y, shapeProgress) * viewport.height * spread + breath,
-            z,
-          )
+          let px = mix(start.x, end.x, shapeProgress) * viewport.width * mobileSpread + drift + hoverX
+          let py = mix(start.y + mobileLift, end.y, shapeProgress) * viewport.height * mobileSpread + breath + hoverY
+          let pz = z
+          let scaleValue = mix(start.s, end.s * (mobile ? 0.95 : tablet ? 0.9 : 1), shapeProgress) * responsiveScale * hoverScale
+          // Mobile: hold coin scale constant at 1.5 × responsiveScale = 0.75
+          // throughout the entire hero phase. Without this, the mix from
+          // initialPose.s (~1.0) to butterflyPose.s (1.5) made the star
+          // formation grow as the user scrolled — visible as a size jump.
+          if (mobile) {
+            scaleValue = 1.5 * responsiveScale * hoverScale
+          }
+          let outerRz = mix(start.rz, end.rz, shapeProgress)
+          let innerRx = mix(start.rx, end.rx, shapeProgress) + butterflyFlutter
+          let innerRy = mix(start.ry, end.ry, shapeProgress)
+          let innerRz = 0
 
-          const finalScaleBoost = mobile ? 0.74 : tablet ? 0.9 : 1
-          const scale = mix(start.s, inBridge ? end.s : end.s * finalScaleBoost, shapeProgress)
-          outer.scale.setScalar(scale * (inBridge ? bridgeScale : responsiveScale))
-          outer.rotation.set(
-            0,
-            0,
-            mix(start.rz, end.rz, shapeProgress),
-          )
-          inner.rotation.set(
-            mix(start.rx, end.rx, shapeProgress) + butterflyFlutter,
-            mix(start.ry, end.ry, shapeProgress) + scrollSpin,
-            rimRoll,
-          )
+          if (novaActive) {
+            // Two-stage nova: star → triangle → expand.
+            // The starting "star" pose is computed in the EXACT same coordinate
+            // space the hero used at scroll=1 — viewport-scaled position +
+            // butterflyFlutter on rx — so the visual at nova=0 matches the
+            // hero's last frame pixel-for-pixel. No reset snap.
+            const star = butterflyPoses[index]
+            const starVp = viewportAtZ(star.z)
+            const starWorldX = star.x * starVp.width * mobileSpread
+            const starWorldY = star.y * starVp.height * mobileSpread
+
+            // End-of-reverse pose. Strategy is already pulling forward into the
+            // user's POV (z=1.4, scale 3.5 — about 2.3× its star size), while
+            // AI and Execution hold the face-on triangle base behind it. The
+            // expand phase then continues Strategy's zoom uninterrupted from
+            // here, so the forward motion is one smooth arc from nova=0 → 0.80.
+            const trianglePos = [
+              // Strategy: lifting toward camera as it unrolls (POV begins here)
+              { x: 0, y: 0.6, z: 1.4, s: 3.5, rx: 0, ry: 0, rz: 0, orz: 0 },
+              // AI: bottom-left of triangle base
+              { x: -1.30, y: -0.50, z: -0.18, s: 1.55, rx: 0.03, ry: -0.08, rz: -0.03, orz: -0.03 },
+              // Execution: bottom-right of triangle base
+              { x: 1.30, y: -0.50, z: -0.28, s: 1.55, rx: 0.03, ry: 0.08, rz: 0.03, orz: 0.03 },
+            ][index]
+
+            // Expand pose — Strategy peak at z=1.8, s=7 (≈1.1× viewport width).
+            // Capped here so the largest size ever rendered is just barely
+            // edge-to-edge — no extreme close-up where the metallic surface
+            // pixelates. The fade then carries the rest of the disappearance,
+            // synchronised with the label so the whole coin dissolves the
+            // moment "STRATEGY" is gone.
+            const expandPos = [
+              { x: 0, y: 0, z: 1.8, s: 7, rx: 0, ry: 0, rz: 0, orz: 0 },
+              // AI: pushed lower-left and shrunk; occluded by Strategy
+              { x: -2.6, y: -1.6, z: -2.0, s: 0.6, rx: 0.08, ry: -0.1, rz: 0, orz: 0 },
+              // Execution: pushed lower-right and shrunk
+              { x: 2.6, y: -1.6, z: -2.2, s: 0.6, rx: 0.08, ry: 0.1, rz: 0, orz: 0 },
+            ][index]
+
+            const reverseRollT = reverseRollPhase
+            const expandT = expandPhase
+
+            // Stage 1: hero-end star (in scaled scene units) → triangle
+            const midX = mix(starWorldX, trianglePos.x, reverseRollT)
+            const midY = mix(starWorldY, trianglePos.y, reverseRollT)
+            const midZ = mix(star.z, trianglePos.z, reverseRollT)
+            const midS = mix(star.s, trianglePos.s, reverseRollT)
+            const midRx = mix(star.rx, trianglePos.rx, reverseRollT)
+            const midRy = mix(star.ry, trianglePos.ry, reverseRollT)
+            const midRz = mix(0, trianglePos.rz, reverseRollT)
+            const midOrz = mix(star.rz, trianglePos.orz, reverseRollT)
+
+            // Stage 2: triangle → expand. butterflyFlutter AND the cursor
+            // hover offsets (hoverX/Y, hoverScale) are carried from hero so
+            // every transform component is identical at the boundary, then
+            // they fade out together over the reverse-roll. Without the hover
+            // carry-over, the cursor-driven offset (typically 1–5 % of viewport
+            // for a cursor anywhere off-centre) and the 1.8 % hover-scale
+            // would snap to zero in one frame at the handoff.
+            const hoverFade = 1 - reverseRollT
+            px = mix(midX, expandPos.x, expandT) + hoverX * hoverFade
+            py = mix(midY, expandPos.y, expandT) + hoverY * hoverFade
+            pz = mix(midZ, expandPos.z, expandT)
+            // Mobile multiplier 0.5 matches the constant hero scale
+            // (1.5 × 0.5 = 0.75), so the size is identical at the
+            // hero→nova boundary — no glitch when the branch flips.
+            scaleValue =
+              mix(midS, expandPos.s, expandT) *
+              (mobile ? 0.5 : tablet ? 0.78 : 1) *
+              mix(hoverScale, 1, reverseRollT)
+            outerRz = mix(midOrz, expandPos.orz, expandT)
+            innerRx = mix(midRx, expandPos.rx, expandT) + butterflyFlutter * hoverFade
+            innerRy = mix(midRy, expandPos.ry, expandT)
+            innerRz = mix(midRz, expandPos.rz, expandT)
+            z = pz
+          }
+
+          outer.position.set(px, py, pz)
+          outer.scale.setScalar(scaleValue)
+          outer.rotation.set(0, 0, outerRz)
+          inner.rotation.set(innerRx, innerRy, innerRz)
+          labelMaterial.opacity = clamp(novaActive ? labelFade : 1)
         })
 
         renderer.render(scene, camera)
@@ -334,12 +451,18 @@ export default function CoinField() {
       updateScrollProgress()
       window.addEventListener('scroll', updateScrollProgress, { passive: true })
       window.addEventListener('resize', resize)
+      window.addEventListener('pointermove', updatePointer, { passive: true })
+      window.addEventListener('pointerleave', releasePointer)
+      window.addEventListener('blur', releasePointer)
       render()
 
       cleanup = () => {
         cancelAnimationFrame(frame)
         window.removeEventListener('scroll', updateScrollProgress)
         window.removeEventListener('resize', resize)
+        window.removeEventListener('pointermove', updatePointer)
+        window.removeEventListener('pointerleave', releasePointer)
+        window.removeEventListener('blur', releasePointer)
 
         const geometries = new Set<import('three').BufferGeometry>()
         const materials = new Set<import('three').Material>()

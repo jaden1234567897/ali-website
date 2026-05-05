@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 
 const coins = [
-  { label: 'Governance', file: '/engraved-coins/coin-governance.glb', x: -2.05 },
+  { label: 'Artificial Intelligence', file: '/engraved-coins/coin-governance.glb', x: -2.05 },
   { label: 'Execution', file: '/engraved-coins/coin-execution.glb', x: 0 },
   { label: 'Strategy', file: '/engraved-coins/coin-strategy.glb', x: 2.05 },
 ]

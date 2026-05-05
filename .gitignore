@@ -50,3 +50,8 @@ next-env.d.ts
 /public/frames/
 /public/frames-hd/
 /public/frames-venn/
+
+# but DO commit the portrait + about-me images used by the live site
+!public/ali-photo.jpg
+!public/aboutme*.jpg
+!public/aboutme*.jpeg
