@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-const SECTION_PIN_DISTANCE = 3400
+const SECTION_PIN_DISTANCE = 5000
 
 function clamp(value: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value))
@@ -46,14 +46,41 @@ const starPoses = [
   { x: 0, y: -0.05, z: -0.40, s: 1.5, rx: Math.PI / 2, ry: -0.04, rz: -Math.PI / 3 },
 ]
 
-// Triangle final — face-on, separated, NOT touching (breathing room between).
+// Triangle initial — Strategy top, Execution bottom-LEFT, AI bottom-RIGHT.
+// (COIN_LABELS index: 0=Strategy, 1=AI, 2=Execution.)
 const trianglePoses = [
-  { x: 0, y: 1.05, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },
-  { x: -1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },
-  { x: 1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },
+  { x: 0, y: 1.05, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },     // Strategy → top
+  { x: 1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 }, // AI → bottom-right
+  { x: -1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },// Execution → bottom-left
 ]
 
-const COIN_LABELS = ['STRATEGY', 'ARTIFICIAL INTELLIGENCE', 'EXECUTION']
+// Triangle rotated — each coin moves CCW by one vertex.
+// Strategy → bottom-left ("left"), AI → top, Execution → bottom-right ("right")
+const triangleRotatedPoses = [
+  { x: -1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },// Strategy → bottom-left
+  { x: 0, y: 1.05, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },     // AI → top
+  { x: 1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 }, // Execution → bottom-right
+]
+
+// Strategy zoom — Strategy moves to RIGHT side, larger and forward.
+// AI/Execution move off-screen (top and bottom) so the focus is Strategy alone.
+const strategyZoomPoses = [
+  { x: 1.45, y: 0, z: 1.0, s: 1.65, rx: 0, ry: 0, rz: 0 },   // Strategy → right + zoom
+  { x: 0, y: 4.5, z: -2, s: 0.6, rx: 0, ry: 0, rz: 0 },      // AI hidden above
+  { x: 0, y: -4.5, z: -2, s: 0.6, rx: 0, ry: 0, rz: 0 },     // Execution hidden below
+]
+
+// Final duo — Strategy hidden, AI top-right + Execution bottom-right.
+const finalDuoPoses = [
+  { x: 0, y: 4.5, z: -2, s: 0.6, rx: 0, ry: 0, rz: 0 },      // Strategy hidden above
+  { x: 1.5, y: 0.65, z: 0.3, s: 1.05, rx: 0, ry: 0, rz: 0 }, // AI → top-right
+  { x: 1.5, y: -0.65, z: 0.3, s: 1.05, rx: 0, ry: 0, rz: 0 },// Execution → bottom-right
+]
+
+// Coin label changed for the Bridge section: middle coin reads
+// "GOVERNANCE" instead of "ARTIFICIAL INTELLIGENCE". Same coin model
+// (silver_coin.glb), only the engraved text label differs.
+const COIN_LABELS = ['STRATEGY', 'GOVERNANCE', 'EXECUTION']
 
 const styles = {
   section: {
@@ -136,32 +163,34 @@ const styles = {
     color: 'var(--ali-gold)',
     fontWeight: 700,
   } as const,
-  // Side columns — appear after the triangle settles
+  // Both columns sit on the LEFT, closer to the coins (which are on the right).
+  // They sequence: "Why strategy fails" first, then "My role" replaces it.
   leftColumn: {
     position: 'absolute',
     top: '50%',
-    left: 'clamp(24px, 4vw, 80px)',
+    left: 'clamp(60px, 8vw, 180px)',
     transform: 'translateY(-50%)',
-    width: 'clamp(220px, 22vw, 300px)',
+    width: 'clamp(300px, 32vw, 440px)',
     zIndex: 3,
     pointerEvents: 'none',
   } as const,
   rightColumn: {
     position: 'absolute',
     top: '50%',
-    right: 'clamp(24px, 4vw, 80px)',
+    left: 'clamp(60px, 8vw, 180px)',
     transform: 'translateY(-50%)',
-    width: 'clamp(220px, 22vw, 320px)',
+    width: 'clamp(300px, 32vw, 440px)',
     zIndex: 3,
     pointerEvents: 'none',
   } as const,
   columnHeader: {
     fontFamily: 'var(--font-display)',
-    fontSize: 'clamp(15px, 1.2vw, 18px)',
+    fontSize: 'clamp(18px, 1.5vw, 24px)',
     fontWeight: 600,
     color: 'var(--ali-ink)',
-    marginBottom: 16,
-    lineHeight: 1.35,
+    marginBottom: 22,
+    lineHeight: 1.3,
+    letterSpacing: '-0.01em',
   } as const,
   bulletList: {
     margin: 0,
@@ -170,29 +199,32 @@ const styles = {
   } as const,
   bullet: {
     fontFamily: 'var(--font-display)',
-    fontSize: 'clamp(13px, 1vw, 14.5px)',
-    fontWeight: 400,
+    fontSize: 'clamp(15px, 1.3vw, 19px)',
+    fontWeight: 500,
     lineHeight: 1.5,
-    color: 'var(--ali-ink-2)',
-    marginBottom: 10,
-    paddingLeft: 14,
+    color: 'var(--ali-ink)',
+    marginBottom: 14,
+    paddingLeft: 22,
     position: 'relative',
+    willChange: 'transform, opacity, filter',
   } as const,
   bulletDot: {
     position: 'absolute',
     left: 0,
     top: '0.55em',
-    width: 5,
-    height: 5,
+    width: 8,
+    height: 8,
     borderRadius: '50%',
     background: 'var(--ali-gold)',
+    boxShadow: '0 0 0 4px rgba(212, 178, 87, 0.16)',
   } as const,
   rightBulletArrow: {
     position: 'absolute',
     left: 0,
-    top: 0,
+    top: '0.05em',
     color: 'var(--ali-gold)',
     fontWeight: 700,
+    fontSize: '1.05em',
   } as const,
 }
 
@@ -231,14 +263,13 @@ export default function AliBridge() {
     window.__aliBridgeProgress = 0
 
     const ctx = gsap.context(() => {
-      // Initial states — paragraph starts BELOW the visible centre so it can
-      // rise through the viewport with scroll (NOVA-style cross-over with
-      // the star which descends).
+      // Initial states — paragraph starts below visible centre, bullets and
+      // headers start with a blur-up effect (filter: blur 8px → 0px on reveal).
       gsap.set(paragraphRef.current, { opacity: 0, y: 260 })
-      gsap.set(leftHeaderRef.current, { opacity: 0, y: 18 })
-      gsap.set(rightHeaderRef.current, { opacity: 0, y: 18 })
-      gsap.set(leftBulletsRef.current, { opacity: 0, y: 14 })
-      gsap.set(rightBulletsRef.current, { opacity: 0, y: 14 })
+      gsap.set(leftHeaderRef.current, { opacity: 0, y: 18, filter: 'blur(8px)' })
+      gsap.set(rightHeaderRef.current, { opacity: 0, y: 18, filter: 'blur(8px)' })
+      gsap.set(leftBulletsRef.current, { opacity: 0, y: 18, filter: 'blur(8px)' })
+      gsap.set(rightBulletsRef.current, { opacity: 0, y: 18, filter: 'blur(8px)' })
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -261,32 +292,68 @@ export default function AliBridge() {
         },
       })
 
-      // Paragraph: rises through the viewport linearly with scroll
-      // (y: 260 → -260 over 40 % of progress), with opacity fade-in/out
-      // bookending the visible window. Linear ease so the rise feels tied
-      // to scroll (parallax), not eased by GSAP.
-      tl.to(paragraphRef.current, { opacity: 1, duration: 0.06 }, 0.22)
+      // Paragraph: rises through the viewport linearly with scroll while
+      // the star descends. Repositioned to match the tightened 0.20→0.40
+      // star-rolling phase.
+      tl.to(paragraphRef.current, { opacity: 1, duration: 0.05 }, 0.16)
       tl.to(
         paragraphRef.current,
-        { y: -260, duration: 0.40, ease: 'none' },
-        0.22,
+        { y: -260, duration: 0.30, ease: 'none' },
+        0.16,
       )
-      tl.to(paragraphRef.current, { opacity: 0, duration: 0.06 }, 0.58)
+      tl.to(paragraphRef.current, { opacity: 0, duration: 0.05 }, 0.42)
 
-      // Left column: header then bullets stagger in (0.72 → 0.85)
-      tl.to(leftHeaderRef.current, { opacity: 1, y: 0, duration: 0.05 }, 0.72)
+      // ── Phase E: Strategy zoomed on right, "Why strategy fails" reveals
+      //    bullet-by-bullet on the left with a blur-up effect.
+      //    Slower stagger (0.025) so each point lands distinctly. ──
+      tl.to(
+        leftHeaderRef.current,
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.04 },
+        0.62,
+      )
       tl.to(
         leftBulletsRef.current,
-        { opacity: 1, y: 0, stagger: 0.012, duration: 0.04 },
-        0.74,
+        {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          stagger: 0.025, // 6 bullets × 0.025 ≈ 0.15 of progress for full reveal
+          duration: 0.05,
+        },
+        0.64,
+      )
+      // ── End of Phase E: Strategy + Why-fails dissolve TOGETHER
+      //    (matches the duoT range 0.84 → 0.91). Bullets are held
+      //    fully visible from ~0.79 to 0.84 first. ──
+      tl.to(
+        leftHeaderRef.current,
+        { opacity: 0, filter: 'blur(6px)', duration: 0.04 },
+        0.84,
+      )
+      tl.to(
+        leftBulletsRef.current,
+        { opacity: 0, filter: 'blur(6px)', stagger: 0.005, duration: 0.04 },
+        0.84,
       )
 
-      // Right column: header then bullets stagger in (0.86 → 0.98)
-      tl.to(rightHeaderRef.current, { opacity: 1, y: 0, duration: 0.05 }, 0.86)
+      // ── Phase F: Execution + Governance on right, "My role" reveals
+      //    bullet-by-bullet. Tightened stagger so all 3 fit in the
+      //    remaining 0.91 → 1.00 window. ──
+      tl.to(
+        rightHeaderRef.current,
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.04 },
+        0.91,
+      )
       tl.to(
         rightBulletsRef.current,
-        { opacity: 1, y: 0, stagger: 0.018, duration: 0.04 },
-        0.88,
+        {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          stagger: 0.018, // 3 bullets × 0.018 ≈ 0.054 of progress
+          duration: 0.04,
+        },
+        0.93,
       )
     }, section)
 
@@ -448,6 +515,22 @@ export default function AliBridge() {
           const outer = new THREE.Group()
           const inner = new THREE.Group()
           const model = proto.clone(true)
+
+          // CRITICAL: Three.js Object3D.clone shares materials by default.
+          // We must clone materials per coin so opacity changes on one coin
+          // don't affect the others (the bug that made Strategy invisible
+          // when AI/Execution had their opacity dropped during zoom phase).
+          model.traverse(obj => {
+            const mesh = obj as import('three').Mesh
+            if (mesh.isMesh && mesh.material) {
+              if (Array.isArray(mesh.material)) {
+                mesh.material = mesh.material.map(m => m.clone())
+              } else {
+                mesh.material = mesh.material.clone()
+              }
+            }
+          })
+
           const labelMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(0.92, 0.22),
             new THREE.MeshBasicMaterial({
@@ -508,8 +591,21 @@ export default function AliBridge() {
       }
       window.addEventListener('resize', resize)
 
+      // Only render when section is visible — avoids GPU load while user is
+      // scrolling through other sections (was contributing to lag in the
+      // books section above).
+      let isVisible = false
+      const visibilityObserver = new IntersectionObserver(
+        entries => {
+          isVisible = entries[0]?.isIntersecting ?? false
+        },
+        { threshold: 0, rootMargin: '200px' },
+      )
+      if (sectionRef.current) visibilityObserver.observe(sectionRef.current)
+
       const render = () => {
         frame = requestAnimationFrame(render)
+        if (!isVisible) return
         const time = clock.elapsedTime
         const delta = clock.getDelta()
         const progress = clamp(window.__aliBridgeProgress ?? 0)
@@ -519,16 +615,29 @@ export default function AliBridge() {
         mouseEased.x += (mouseTarget.x - mouseEased.x) * follow
         mouseEased.y += (mouseTarget.y - mouseEased.y) * follow
 
-        // ── Phase progresses ──
-        // 0.00 → 0.10  Strategy returns from POV (face-on, retreats)
-        // 0.10 → 0.30  AI/Execution arrive, all 3 form star
-        // 0.30 → 0.55  Star rolls (~2 viewports of pin)
-        // 0.55 → 0.70  Detach to triangle (face-on, separated)
-        // 0.70 → 1.00  Triangle holds, side columns reveal, hover alive
-        const reverseT = smoothstep(0, 0.30, progress)
-        const starHoldT = smoothstep(0.30, 0.55, progress)
-        const detachT = smoothstep(0.55, 0.70, progress)
-        const aliveT = smoothstep(0.65, 0.85, progress)
+        // ── Phase progresses (5000 px pin = ~4.6 vh) ──
+        // Tightened POV/star phases so early scroll feels reactive (not "scroll
+        // does nothing"), and gave bullet-reading phases more time.
+        // 0.00 → 0.20  Reverse + star formation (compressed from 30 %)
+        // 0.20 → 0.40  Star rolls (paragraph parallax)
+        // 0.40 → 0.48  Detach to triangle
+        // 0.48 → 0.55  Triangle rotates CCW
+        // 0.55 → 0.62  Strategy zooms to right
+        // 0.62 → 0.78  "Why strategy fails" reveals one-by-one + holds (16 % = ~1.5 vh)
+        // 0.78 → 0.85  Strategy + bullets fade out, Execution + Governance arrive
+        // 0.85 → 1.00  "My role" reveals one-by-one + final hold (15 % = ~1.4 vh)
+        const reverseT = smoothstep(0, 0.20, progress)
+        const starHoldT = smoothstep(0.20, 0.40, progress)
+        const detachT = smoothstep(0.40, 0.48, progress)
+        const rotateT = smoothstep(0.48, 0.55, progress)
+        const zoomT = smoothstep(0.55, 0.62, progress)
+        // Strategy fades AFTER all 6 "Why fails" bullets have revealed AND
+        // held visible for a beat. Last bullet lands ~0.79, hold 0.79→0.84,
+        // then fade together with bullets across 0.84→0.91.
+        const duoT = smoothstep(0.84, 0.91, progress)
+        // hover-alive only during the static triangle window (after detach,
+        // before zoom). Avoid mouse-tilt while coins are moving to/from zoom.
+        const aliveT = smoothstep(0.48, 0.55, progress) * (1 - smoothstep(0.55, 0.62, progress))
 
         // Per-coin entry timing — Strategy first, AI/Execution delayed
         const strategyT = smoothstep(0, 0.65, reverseT)
@@ -543,18 +652,22 @@ export default function AliBridge() {
         rig.rotation.set(0, 0, rigSpin)
 
         // Vertical scroll-tracking — star descends through the viewport
-        // linearly with scroll while the paragraph rises (cross-over
-        // parallax). Recentres smoothly during the detach so the triangle
-        // poses (which are absolute) settle around (0, 0).
-        const starRollT = clamp((progress - 0.10) / 0.45)
-        const starRollY = mix(1.2, -1.2, starRollT)
-        const recentre = smoothstep(0.55, 0.70, progress)
+        // linearly with scroll while the paragraph rises (cross-over parallax).
+        // Updated for the tightened phase ranges: rolling 0.20→0.40, recentre
+        // during detach 0.40→0.48 so the triangle (absolute poses) lands at
+        // (0, 0) — not dragged to y=-0.6 like the old formula was doing.
+        const starRollT = clamp((progress - 0.20) / 0.20)
+        const starRollY = mix(0.8, -0.8, starRollT)
+        const recentre = smoothstep(0.40, 0.48, progress)
         rig.position.y = starRollY * (1 - recentre)
 
         groups.forEach(({ outer, inner, materials, labelMat }, index) => {
           const init = initialPoses[index]
           const star = starPoses[index]
           const tri = trianglePoses[index]
+          const triR = triangleRotatedPoses[index]
+          const sz = strategyZoomPoses[index]
+          const fd = finalDuoPoses[index]
           const tEntry = index === 0 ? strategyT : sideT
 
           // Stage 1: initial → star
@@ -575,6 +688,34 @@ export default function AliBridge() {
           ry = mix(ry, tri.ry, detachT)
           rz = mix(rz, tri.rz, detachT)
 
+          // Stage 3: triangle → triangle rotated (CCW one vertex)
+          x = mix(x, triR.x, rotateT)
+          y = mix(y, triR.y, rotateT)
+          z = mix(z, triR.z, rotateT)
+          s = mix(s, triR.s, rotateT)
+          rx = mix(rx, triR.rx, rotateT)
+          ry = mix(ry, triR.ry, rotateT)
+          rz = mix(rz, triR.rz, rotateT)
+
+          // Stage 4: rotated triangle → strategy zoom (Strategy on right,
+          // AI/Exec slip off-screen)
+          x = mix(x, sz.x, zoomT)
+          y = mix(y, sz.y, zoomT)
+          z = mix(z, sz.z, zoomT)
+          s = mix(s, sz.s, zoomT)
+          rx = mix(rx, sz.rx, zoomT)
+          ry = mix(ry, sz.ry, zoomT)
+          rz = mix(rz, sz.rz, zoomT)
+
+          // Stage 5: strategy zoom → final duo (Strategy gone, AI + Exec on right)
+          x = mix(x, fd.x, duoT)
+          y = mix(y, fd.y, duoT)
+          z = mix(z, fd.z, duoT)
+          s = mix(s, fd.s, duoT)
+          rx = mix(rx, fd.rx, duoT)
+          ry = mix(ry, fd.ry, duoT)
+          rz = mix(rz, fd.rz, duoT)
+
           outer.position.set(x, y, z)
           outer.scale.setScalar(s)
           outer.rotation.set(0, 0, rz)
@@ -586,9 +727,22 @@ export default function AliBridge() {
           const breathe = aliveT * Math.sin(time * 0.6 + index * 1.7) * 0.025
           inner.rotation.set(rx + hoverTiltX + breathe, ry + hoverTiltY, 0)
 
-          // ── Opacity: SOLID coins throughout. Just fade in at start so
-          //    Strategy doesn't pop into existence; same for AI/Execution. ──
-          const coinOpacity = mix(0, 1, tEntry)
+          // ── Opacity per coin per phase ──
+          // Strategy (i=0): 0 → 1 on entry, stays at 1 until the duo phase
+          //   where it fades to 0 (off-screen above).
+          // AI (i=1) + Execution (i=2): 0 → 1 on entry, stays at 1 through
+          //   triangle + rotation, fades to 0 during zoom (Strategy alone
+          //   on the right), fades back to 1 in the duo phase.
+          let coinOpacity = mix(0, 1, tEntry)
+          if (index === 0) {
+            // Strategy fades out as duo phase begins
+            coinOpacity = mix(coinOpacity, 0, duoT)
+          } else {
+            // AI / Exec fade out during zoom, then back in for duo
+            coinOpacity = mix(coinOpacity, 0, zoomT)
+            coinOpacity = mix(coinOpacity, 1, duoT)
+          }
+
           materials.forEach(m => {
             m.opacity = coinOpacity
           })
@@ -602,6 +756,7 @@ export default function AliBridge() {
 
       cleanup = () => {
         cancelAnimationFrame(frame)
+        visibilityObserver.disconnect()
         window.removeEventListener('mousemove', onMouseMove)
         window.removeEventListener('resize', resize)
         const geos = new Set<import('three').BufferGeometry>()

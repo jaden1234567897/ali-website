@@ -2,175 +2,306 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import Image from 'next/image'
 
-type Slide = {
-  id: string
-  label: string
-  title: string
-  img: string
-}
-
-const SLIDES: Slide[] = [
-  {
-    id: 'prompts',
-    label: 'AI Prompts',
-    title: 'Strategy Prompt Library',
-    img: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&q=80&auto=format&fit=crop',
-  },
-  {
-    id: 'ogsm',
-    label: 'OGSM',
-    title: 'AI-assisted OGSM',
-    img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80&auto=format&fit=crop',
-  },
-  {
-    id: 'swot',
-    label: 'SWOT Analysis',
-    title: 'Sharper SWOT in minutes',
-    img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=80&auto=format&fit=crop',
-  },
-  {
-    id: 'council',
-    label: 'Advisory Council',
-    title: 'Executive Council Simulator',
-    img: 'https://images.unsplash.com/photo-1664575602807-e002fc73754f?w=1200&q=80&auto=format&fit=crop',
-  },
-  {
-    id: 'cascade',
-    label: 'OKR Cascade',
-    title: 'Cascade & Accountability Map',
-    img: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1200&q=80&auto=format&fit=crop',
-  },
+// Distorted Gallery — cinematic 3D perspective carousel
+// • Active image centered, full-size
+// • Surrounding images rotate / distort to the sides
+// • Autoplay every 7s
+// • Arrow buttons + keyboard arrow keys + touch swipe navigation
+// • Hover lifts brightness + shadow for active card
+const IMAGES = [
+  '/ali-photo.jpg',
+  '/aboutme%202.jpg',
+  '/aboutme%203.jpg',
+  '/aboutme%204.jpg',
+  '/aboutme%205.jpg',
 ]
+
+const AUTOPLAY_MS = 7000
+const TRANSITION_MS = 700
 
 export default function AliCurvedAI() {
   const [active, setActive] = useState(0)
-  const [isTouch, setIsTouch] = useState(false)
-  const total = SLIDES.length
-  const trackRef = useRef<HTMLDivElement>(null)
-  const startXRef = useRef<number | null>(null)
+  const total = IMAGES.length
+  const containerRef = useRef<HTMLDivElement>(null)
+  const touchStartX = useRef<number | null>(null)
+  const lastUserActionAt = useRef<number>(0)
 
-  useEffect(() => {
-    setIsTouch(window.matchMedia('(pointer: coarse)').matches)
+  const goNext = useCallback(() => {
+    setActive(prev => (prev + 1) % total)
+    lastUserActionAt.current = Date.now()
+  }, [total])
+  const goPrev = useCallback(() => {
+    setActive(prev => (prev - 1 + total) % total)
+    lastUserActionAt.current = Date.now()
+  }, [total])
+  const goTo = useCallback((idx: number) => {
+    setActive(idx)
+    lastUserActionAt.current = Date.now()
   }, [])
 
-  const next = useCallback(() => setActive(i => (i + 1) % total), [total])
-  const prev = useCallback(() => setActive(i => (i - 1 + total) % total), [total])
+  // Autoplay (pauses for 1 cycle after user interaction)
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (Date.now() - lastUserActionAt.current < AUTOPLAY_MS) return
+      setActive(prev => (prev + 1) % total)
+    }, AUTOPLAY_MS)
+    return () => window.clearInterval(id)
+  }, [total])
 
+  // Keyboard navigation
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') next()
-      else if (e.key === 'ArrowLeft') prev()
+      if (e.key === 'ArrowRight') goNext()
+      else if (e.key === 'ArrowLeft') goPrev()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [next, prev])
+  }, [goNext, goPrev])
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startXRef.current = e.touches[0].clientX
+  // Touch swipe navigation
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0]?.clientX ?? null
   }
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (startXRef.current === null) return
-    const delta = e.changedTouches[0].clientX - startXRef.current
-    if (delta > 60) prev()
-    else if (delta < -60) next()
-    startXRef.current = null
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current == null) return
+    const endX = e.changedTouches[0]?.clientX ?? touchStartX.current
+    const dx = endX - touchStartX.current
+    if (Math.abs(dx) > 60) {
+      if (dx > 0) goPrev()
+      else goNext()
+    }
+    touchStartX.current = null
   }
 
   return (
-    <section id="ai" className="ali-section ali-curved">
-      <div className="ali-curved-header">
-        <p className="ali-eyebrow" style={{ justifyContent: 'center', display: 'flex' }}>
-          AI in Strategy
-        </p>
-        <h2 className="ali-h2">
-          AI makes the thinking <em>sharper</em>, the evidence stronger,
-          the conclusions harder to ignore.
-        </h2>
-        <p className="ali-lede" style={{ margin: '0 auto' }}>
-          A glimpse at the frameworks Ali uses to compress decision timelines and
-          surface insight before the meeting starts.
-        </p>
-      </div>
-
+    <section
+      id="ai"
+      style={{
+        position: 'relative',
+        width: '100%',
+        background: 'var(--ali-cream)',
+        padding: 'clamp(80px, 10vw, 140px) clamp(20px, 5vw, 96px)',
+        overflow: 'hidden',
+      }}
+      aria-label="Ali Al-Ali — Gallery"
+    >
       <div
-        className="ali-curved-stage"
-        ref={trackRef}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        role="region"
-        aria-label="AI strategy framework gallery"
-        aria-roledescription="carousel"
+        style={{
+          width: '100%',
+          maxWidth: 1280,
+          margin: '0 auto',
+          textAlign: 'center',
+        }}
       >
-        <div className="ali-curved-track">
-          {SLIDES.map((s, i) => {
-            // Position relative to active, wrapping around
+        <p
+          className="ali-eyebrow"
+          style={{
+            justifyContent: 'center',
+            display: 'inline-flex',
+            marginBottom: 16,
+          }}
+        >
+          Gallery
+        </p>
+        <h2
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(28px, 3.4vw, 46px)',
+            fontWeight: 600,
+            lineHeight: 1.15,
+            letterSpacing: '-0.02em',
+            color: 'var(--ali-ink)',
+            margin: '0 auto 56px',
+            maxWidth: 720,
+          }}
+        >
+          From the work, the room, the field.
+        </h2>
+
+        {/* 3D stage */}
+        <div
+          ref={containerRef}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          style={{
+            position: 'relative',
+            width: '100%',
+            height: 'clamp(360px, 56vh, 620px)',
+            perspective: 1600,
+            perspectiveOrigin: '50% 50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto',
+            userSelect: 'none',
+          }}
+          role="region"
+          aria-roledescription="carousel"
+          aria-live="polite"
+        >
+          {IMAGES.map((src, i) => {
+            // Compute the shortest signed distance from active in either direction
             let offset = i - active
             if (offset > total / 2) offset -= total
             if (offset < -total / 2) offset += total
+
             const abs = Math.abs(offset)
+            const isActive = offset === 0
 
-            // Visibility: only render the 5 closest cards
-            const visible = abs <= 2
-
-            // Curved arc transform
-            const x = offset * (isTouch ? 56 : 32) // base X spacing in %
-            const z = -abs * 220
-            const rotateY = offset * (isTouch ? -8 : -22)
-            const scale = abs === 0 ? 1 : abs === 1 ? 0.86 : 0.72
-            const opacity = abs === 0 ? 1 : abs === 1 ? 0.85 : 0.4
-            const blur = abs >= 2 ? 4 : 0
+            // 3D distortion math:
+            // active: front, full size, no rotation
+            // ±1: tilted 35°, pushed back, slightly smaller
+            // ±2: tilted 55°, pushed further back, smallest
+            const rotateY = offset === 0 ? 0 : Math.sign(offset) * (35 + (abs - 1) * 20)
+            const translateX = offset * 38 // % of base width
+            const translateZ = offset === 0 ? 0 : -120 - (abs - 1) * 100
+            const scale = offset === 0 ? 1 : 0.85 - (abs - 1) * 0.08
+            const opacity = abs <= 2 ? 1 - (abs - 0) * 0.08 : 0
+            const zIndex = 10 - abs
 
             return (
               <div
-                key={s.id}
-                className="ali-curved-card"
-                aria-hidden={!visible || abs > 0}
-                aria-roledescription="slide"
-                aria-label={`${s.label}: ${s.title}`}
-                onClick={() => {
-                  if (offset !== 0) setActive(i)
-                }}
+                key={src}
+                aria-hidden={!isActive}
+                onClick={() => goTo(i)}
                 style={{
-                  transform: `translate(-50%, -50%) translate3d(${x}%, 0, ${z}px) rotateY(${rotateY}deg) scale(${scale})`,
-                  opacity: visible ? opacity : 0,
-                  zIndex: 100 - abs,
-                  filter: blur ? `blur(${blur}px)` : 'none',
-                  pointerEvents: visible ? 'auto' : 'none',
+                  position: 'absolute',
+                  width: 'min(64vw, 720px)',
+                  height: '100%',
+                  borderRadius: 18,
+                  overflow: 'hidden',
+                  cursor: isActive ? 'default' : 'pointer',
+                  transformStyle: 'preserve-3d',
+                  transform: `translate(-50%, 0) translateX(${translateX}%) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+                  left: '50%',
+                  transition: `transform ${TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${TRANSITION_MS}ms ease, filter ${TRANSITION_MS}ms ease`,
+                  willChange: 'transform, opacity',
+                  zIndex,
+                  opacity,
+                  boxShadow: isActive
+                    ? '0 30px 80px -20px rgba(20,20,40,0.5), 0 10px 24px -10px rgba(20,20,40,0.3)'
+                    : '0 12px 30px -10px rgba(20,20,40,0.25)',
+                  border: '1px solid rgba(0,0,0,0.06)',
+                  background: '#fff',
+                  filter: isActive ? 'brightness(1)' : 'brightness(0.78)',
+                }}
+                onMouseEnter={e => {
+                  if (isActive) {
+                    e.currentTarget.style.boxShadow =
+                      '0 36px 90px -18px rgba(20,20,40,0.55), 0 12px 28px -10px rgba(20,20,40,0.35)'
+                    e.currentTarget.style.filter = 'brightness(1.05)'
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (isActive) {
+                    e.currentTarget.style.boxShadow =
+                      '0 30px 80px -20px rgba(20,20,40,0.5), 0 10px 24px -10px rgba(20,20,40,0.3)'
+                    e.currentTarget.style.filter = 'brightness(1)'
+                  }
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={s.img} alt={s.title} loading="lazy" />
-                <div className="ali-curved-card-label">
-                  <small>{s.label}</small>
-                  <strong>{s.title}</strong>
-                </div>
+                <Image
+                  src={src}
+                  alt={`Gallery image ${i + 1}`}
+                  fill
+                  sizes="(max-width: 768px) 90vw, 720px"
+                  quality={95}
+                  priority={isActive}
+                  draggable={false}
+                  style={{
+                    objectFit: 'cover',
+                    objectPosition: 'center',
+                    pointerEvents: 'none',
+                  }}
+                />
               </div>
             )
           })}
         </div>
-      </div>
 
-      <div className="ali-curved-controls">
-        <button
-          type="button"
-          className="ali-curved-arrow"
-          onClick={prev}
-          aria-label="Previous slide"
+        {/* Controls — arrows + dot indicator */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 24,
+            marginTop: 48,
+          }}
         >
-          <ChevronLeft size={20} />
-        </button>
-        <div className="ali-curved-counter" aria-live="polite">
-          {String(active + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
+          <button
+            type="button"
+            onClick={goPrev}
+            aria-label="Previous image"
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: '50%',
+              border: '1px solid var(--ali-line)',
+              background: 'transparent',
+              color: 'var(--ali-ink)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.2s, border-color 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(212, 178, 87, 0.1)'
+              e.currentTarget.style.borderColor = 'var(--ali-gold)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.borderColor = 'var(--ali-line)'
+            }}
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 14,
+              letterSpacing: '0.18em',
+              color: 'var(--ali-muted)',
+              minWidth: 60,
+              textAlign: 'center',
+            }}
+          >
+            {String(active + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
+          </div>
+
+          <button
+            type="button"
+            onClick={goNext}
+            aria-label="Next image"
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: '50%',
+              border: '1px solid var(--ali-line)',
+              background: 'transparent',
+              color: 'var(--ali-ink)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.2s, border-color 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(212, 178, 87, 0.1)'
+              e.currentTarget.style.borderColor = 'var(--ali-gold)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.borderColor = 'var(--ali-line)'
+            }}
+          >
+            <ChevronRight size={20} />
+          </button>
         </div>
-        <button
-          type="button"
-          className="ali-curved-arrow"
-          onClick={next}
-          aria-label="Next slide"
-        >
-          <ChevronRight size={20} />
-        </button>
       </div>
     </section>
   )

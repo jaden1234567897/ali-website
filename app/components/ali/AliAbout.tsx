@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import AliImgStack from './AliImgStack'
+import Image from 'next/image'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
@@ -198,6 +198,118 @@ const styles = {
   } as const,
 }
 
+// Single-image portrait with cursor-driven 3D tilt — same hover feel as
+// the hero coins (pointer-x → ry, pointer-y → rx, eased follow).
+function AboutPortraitTilt() {
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const tiltRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const tilt = tiltRef.current
+    const wrap = wrapRef.current
+    if (!tilt || !wrap) return
+
+    const target = { x: 0, y: 0, active: 0 }
+    const eased = { x: 0, y: 0, active: 0 }
+    let rafId = 0
+    let alive = true
+
+    const onMove = (e: PointerEvent) => {
+      const rect = wrap.getBoundingClientRect()
+      target.x = ((e.clientX - rect.left) / rect.width - 0.5) * 2 // -1..1
+      target.y = ((e.clientY - rect.top) / rect.height - 0.5) * 2
+      target.active = 1
+    }
+    const onLeave = () => {
+      target.x = 0
+      target.y = 0
+      target.active = 0
+    }
+
+    const tick = () => {
+      if (!alive) return
+      eased.x += (target.x - eased.x) * 0.10
+      eased.y += (target.y - eased.y) * 0.10
+      eased.active += (target.active - eased.active) * 0.08
+
+      const tiltX = -eased.y * 8 * eased.active
+      const tiltY = eased.x * 10 * eased.active
+      const lift = eased.active * 8
+
+      tilt.style.transform = `translate3d(0, ${-lift}px, 0) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`
+      rafId = requestAnimationFrame(tick)
+    }
+
+    wrap.addEventListener('pointermove', onMove, { passive: true })
+    wrap.addEventListener('pointerleave', onLeave, { passive: true })
+    rafId = requestAnimationFrame(tick)
+
+    return () => {
+      alive = false
+      cancelAnimationFrame(rafId)
+      wrap.removeEventListener('pointermove', onMove)
+      wrap.removeEventListener('pointerleave', onLeave)
+    }
+  }, [])
+
+  return (
+    <div
+      ref={wrapRef}
+      style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: 440,
+        aspectRatio: '4 / 5',
+        perspective: 1200,
+      }}
+    >
+      <div
+        ref={tiltRef}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: 18,
+          overflow: 'hidden',
+          boxShadow:
+            '0 20px 50px -14px rgba(20,20,40,0.32), 0 6px 14px -6px rgba(20,20,40,0.20)',
+          background: '#fff',
+          transformStyle: 'preserve-3d',
+          willChange: 'transform',
+          transition: 'box-shadow 0.3s ease',
+          border: '1px solid rgba(0,0,0,0.06)',
+        }}
+      >
+        <Image
+          src="/alii.webp"
+          alt="Ali Al-Ali"
+          fill
+          sizes="(max-width: 880px) 90vw, 440px"
+          quality={95}
+          priority
+          style={{
+            objectFit: 'cover',
+            objectPosition: 'top center',
+            pointerEvents: 'none',
+          }}
+          draggable={false}
+        />
+        {/* Gold left edge accent (matches site brand) */}
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderLeft: '3px solid var(--ali-gold)',
+            borderRadius: 18,
+            pointerEvents: 'none',
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
 export default function AliAbout() {
   const sectionRef = useRef<HTMLElement>(null)
   const eyebrowRef = useRef<HTMLParagraphElement>(null)
@@ -299,18 +411,10 @@ export default function AliAbout() {
               alignItems: 'center',
               justifyContent: 'center',
               willChange: 'transform, opacity',
-              perspective: 1000,
+              perspective: 1200,
             }}
           >
-            <AliImgStack
-              images={[
-                '/ali-photo.jpg',
-                '/aboutme%202.jpg',
-                '/aboutme%203.jpg',
-                '/aboutme%204.jpg',
-                '/aboutme%205.jpg',
-              ]}
-            />
+            <AboutPortraitTilt />
           </div>
 
           <div style={styles.content}>
