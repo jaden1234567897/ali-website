@@ -77,26 +77,40 @@ const finalDuoPoses = [
 ]
 
 // ── MOBILE pose tables ─────────────────────────────────────────────
-// Coin sits at TOP of viewport, text columns occupy the middle.
+// Two-step flow: coin arrives at CENTER, holds, then LIFTS to upper third
+// (not high enough to crop behind the fixed nav). Text columns occupy the
+// middle/lower portion once the coin has lifted.
 const trianglePosesMobile = [
-  { x: 0, y: 1.55, z: 0, s: 0.9, rx: 0, ry: 0, rz: 0 },     // Strategy → top
-  { x: 0.95, y: 0.35, z: 0, s: 0.9, rx: 0, ry: 0, rz: 0 },  // Governance → upper-right
-  { x: -0.95, y: 0.35, z: 0, s: 0.9, rx: 0, ry: 0, rz: 0 }, // Execution → upper-left
+  { x: 0, y: 0.85, z: 0, s: 0.85, rx: 0, ry: 0, rz: 0 },     // Strategy → top
+  { x: 0.85, y: -0.25, z: 0, s: 0.85, rx: 0, ry: 0, rz: 0 }, // Governance → bottom-right
+  { x: -0.85, y: -0.25, z: 0, s: 0.85, rx: 0, ry: 0, rz: 0 },// Execution → bottom-left
 ]
 const triangleRotatedPosesMobile = [
-  { x: -0.95, y: 0.35, z: 0, s: 0.9, rx: 0, ry: 0, rz: 0 },
-  { x: 0, y: 1.55, z: 0, s: 0.9, rx: 0, ry: 0, rz: 0 },
-  { x: 0.95, y: 0.35, z: 0, s: 0.9, rx: 0, ry: 0, rz: 0 },
+  { x: -0.85, y: -0.25, z: 0, s: 0.85, rx: 0, ry: 0, rz: 0 },
+  { x: 0, y: 0.85, z: 0, s: 0.85, rx: 0, ry: 0, rz: 0 },
+  { x: 0.85, y: -0.25, z: 0, s: 0.85, rx: 0, ry: 0, rz: 0 },
 ]
-const strategyZoomPosesMobile = [
-  { x: 0, y: 1.55, z: 0.4, s: 1.05, rx: 0, ry: 0, rz: 0 },  // Strategy → top-center
+// Strategy first arrives CENTRE (a held beat), then lifts to upper third.
+const strategyCenterPosesMobile = [
+  { x: 0, y: 0, z: 0.4, s: 1.0, rx: 0, ry: 0, rz: 0 },      // Strategy → centre
   { x: 0, y: 5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },       // Governance hidden
   { x: 0, y: -5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },      // Execution hidden
 ]
-const finalDuoPosesMobile = [
+const strategyZoomPosesMobile = [
+  { x: 0, y: 0.85, z: 0.4, s: 0.8, rx: 0, ry: 0, rz: 0 },   // Strategy → upper third
+  { x: 0, y: 5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },
+  { x: 0, y: -5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },
+]
+// Duo first arrives CENTRE side-by-side, then both lift together.
+const duoCenterPosesMobile = [
   { x: 0, y: 5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },        // Strategy hidden
-  { x: -0.75, y: 1.55, z: 0.3, s: 0.9, rx: 0, ry: 0, rz: 0 },// Governance → top-left
-  { x: 0.75, y: 1.55, z: 0.3, s: 0.9, rx: 0, ry: 0, rz: 0 }, // Execution → top-right
+  { x: -0.65, y: 0, z: 0.3, s: 0.85, rx: 0, ry: 0, rz: 0 },  // Governance centre-left
+  { x: 0.65, y: 0, z: 0.3, s: 0.85, rx: 0, ry: 0, rz: 0 },   // Execution centre-right
+]
+const finalDuoPosesMobile = [
+  { x: 0, y: 5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },
+  { x: -0.65, y: 0.85, z: 0.3, s: 0.7, rx: 0, ry: 0, rz: 0 },// Governance upper-left
+  { x: 0.65, y: 0.85, z: 0.3, s: 0.7, rx: 0, ry: 0, rz: 0 }, // Execution upper-right
 ]
 
 const COIN_LABELS = ['STRATEGY', 'GOVERNANCE', 'EXECUTION']
@@ -323,11 +337,14 @@ export default function AliBridge() {
       )
       tl.to(paragraphRef.current, { opacity: 0, duration: 0.05 }, 0.42)
 
-      // ── Phase E: Strategy zoom on right, "Why fails" reveals on LEFT ──
+      // ── Phase E: Strategy zoom, "Why fails" reveals on LEFT ──
+      // Reveal starts at 0.69 so on mobile the coin has finished lifting
+      // (lift completes at 0.68); on desktop this gives a brief "Strategy
+      // alone" beat before the failure modes appear.
       tl.to(
         leftHeaderRef.current,
         { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.04 },
-        0.62,
+        0.69,
       )
       tl.to(
         leftBulletsRef.current,
@@ -335,10 +352,10 @@ export default function AliBridge() {
           opacity: 1,
           y: 0,
           filter: 'blur(0px)',
-          stagger: 0.022,
-          duration: 0.05,
+          stagger: 0.014,
+          duration: 0.04,
         },
-        0.64,
+        0.71,
       )
       // ── End Phase E: Strategy + Why fails fade out together ──
       tl.to(
@@ -352,12 +369,12 @@ export default function AliBridge() {
         0.84,
       )
 
-      // ── Phase F: Governance + Execution on right, "My role" reveals
-      //    on LEFT (same column position — "My role" replaces "Why fails") ──
+      // ── Phase F: Governance + Execution arrive at centre, lift, then
+      //    "My role" reveals (same LEFT column, replacing "Why fails") ──
       tl.to(
         rightHeaderRef.current,
         { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.04 },
-        0.91,
+        0.965,
       )
       tl.to(
         rightBulletsRef.current,
@@ -365,10 +382,10 @@ export default function AliBridge() {
           opacity: 1,
           y: 0,
           filter: 'blur(0px)',
-          stagger: 0.022,
-          duration: 0.05,
+          stagger: 0.008,
+          duration: 0.03,
         },
-        0.93,
+        0.98,
       )
     }, section)
 
@@ -645,6 +662,7 @@ export default function AliBridge() {
         const rotateT = smoothstep(0.48, 0.55, progress)
         const zoomT = smoothstep(0.55, 0.62, progress)
         const duoT = smoothstep(0.84, 0.91, progress)
+        // (mobile lift sub-phases are computed below near the coin loop)
         const aliveT = smoothstep(0.48, 0.55, progress) * (1 - smoothstep(0.55, 0.62, progress))
 
         // Per-coin entry timing — Strategy first, AI/Execution delayed
@@ -671,13 +689,19 @@ export default function AliBridge() {
         rig.position.y = starRollY * (1 - recentre)
         rig.scale.setScalar(1)
 
+        // Mobile sub-phase progresses for the two-step centre→lift flow.
+        const liftStrategyT = mobile ? smoothstep(0.62, 0.68, progress) : 0
+        const liftDuoT = mobile ? smoothstep(0.91, 0.96, progress) : 0
+
         groups.forEach(({ outer, inner, materials, labelMat }, index) => {
           const init = initialPoses[index]
           const star = starPoses[index]
           const tri = mobile ? trianglePosesMobile[index] : trianglePoses[index]
           const triR = mobile ? triangleRotatedPosesMobile[index] : triangleRotatedPoses[index]
-          const sz = mobile ? strategyZoomPosesMobile[index] : strategyZoomPoses[index]
-          const fd = mobile ? finalDuoPosesMobile[index] : finalDuoPoses[index]
+          // On mobile, the "zoom" target is CENTRE first; the lift to top happens
+          // in a separate stage 4b below. On desktop, sz is the desktop zoom pose.
+          const sz = mobile ? strategyCenterPosesMobile[index] : strategyZoomPoses[index]
+          const fd = mobile ? duoCenterPosesMobile[index] : finalDuoPoses[index]
           const tEntry = index === 0 ? strategyT : sideT
 
           // Stage 1: initial → star
@@ -724,6 +748,25 @@ export default function AliBridge() {
           rx = mix(rx, fd.rx, duoT)
           ry = mix(ry, fd.ry, duoT)
           rz = mix(rz, fd.rz, duoT)
+
+          // Stage 4b + 5b (mobile): centre → lifted to upper third.
+          // Strategy lifts during 0.62→0.68; Governance + Execution lift
+          // together during 0.91→0.96. Bullets reveal AFTER each lift.
+          if (mobile) {
+            if (index === 0) {
+              const lift = strategyZoomPosesMobile[0]
+              x = mix(x, lift.x, liftStrategyT)
+              y = mix(y, lift.y, liftStrategyT)
+              z = mix(z, lift.z, liftStrategyT)
+              s = mix(s, lift.s, liftStrategyT)
+            } else {
+              const lift = finalDuoPosesMobile[index]
+              x = mix(x, lift.x, liftDuoT)
+              y = mix(y, lift.y, liftDuoT)
+              z = mix(z, lift.z, liftDuoT)
+              s = mix(s, lift.s, liftDuoT)
+            }
+          }
 
           outer.position.set(x, y, z)
           outer.scale.setScalar(s)
@@ -882,13 +925,13 @@ export default function AliBridge() {
         @media (max-width: 768px) {
           :global(.ali-bridge-col--left),
           :global(.ali-bridge-col--right) {
-            top: 58% !important;
-            bottom: auto !important;
+            top: auto !important;
+            bottom: 6vh !important;
             left: 5% !important;
             right: 5% !important;
-            transform: translateY(-50%) !important;
+            transform: none !important;
             width: 90% !important;
-            max-height: 50vh;
+            max-height: 48vh;
             overflow: hidden;
           }
           :global(.ali-bridge-col h3) {
