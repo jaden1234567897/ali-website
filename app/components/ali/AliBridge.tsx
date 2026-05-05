@@ -76,6 +76,29 @@ const finalDuoPoses = [
   { x: 1.5, y: -0.65, z: 0.3, s: 1.05, rx: 0, ry: 0, rz: 0 },// Execution → bottom-right
 ]
 
+// ── MOBILE pose tables ─────────────────────────────────────────────
+// Coin sits at TOP of viewport, text columns occupy the middle.
+const trianglePosesMobile = [
+  { x: 0, y: 1.55, z: 0, s: 0.9, rx: 0, ry: 0, rz: 0 },     // Strategy → top
+  { x: 0.95, y: 0.35, z: 0, s: 0.9, rx: 0, ry: 0, rz: 0 },  // Governance → upper-right
+  { x: -0.95, y: 0.35, z: 0, s: 0.9, rx: 0, ry: 0, rz: 0 }, // Execution → upper-left
+]
+const triangleRotatedPosesMobile = [
+  { x: -0.95, y: 0.35, z: 0, s: 0.9, rx: 0, ry: 0, rz: 0 },
+  { x: 0, y: 1.55, z: 0, s: 0.9, rx: 0, ry: 0, rz: 0 },
+  { x: 0.95, y: 0.35, z: 0, s: 0.9, rx: 0, ry: 0, rz: 0 },
+]
+const strategyZoomPosesMobile = [
+  { x: 0, y: 1.55, z: 0.4, s: 1.05, rx: 0, ry: 0, rz: 0 },  // Strategy → top-center
+  { x: 0, y: 5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },       // Governance hidden
+  { x: 0, y: -5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },      // Execution hidden
+]
+const finalDuoPosesMobile = [
+  { x: 0, y: 5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },        // Strategy hidden
+  { x: -0.75, y: 1.55, z: 0.3, s: 0.9, rx: 0, ry: 0, rz: 0 },// Governance → top-left
+  { x: 0.75, y: 1.55, z: 0.3, s: 0.9, rx: 0, ry: 0, rz: 0 }, // Execution → top-right
+]
+
 const COIN_LABELS = ['STRATEGY', 'GOVERNANCE', 'EXECUTION']
 
 const styles = {
@@ -642,20 +665,19 @@ export default function AliBridge() {
         const starRollT = clamp((progress - 0.25) / 0.30)
         const starRollY = mix(0.8, -0.8, starRollT)
         const recentre = smoothstep(0.55, 0.70, progress)
-        // Mobile: lift the rig up a touch and shrink so the triangle leaves
-        // room for the text columns that stack below on small screens.
+        // Mobile: coins sit at the top of the viewport (poses bake in y≈1.55)
+        // so the text columns can occupy the middle of the section.
         const mobile = window.innerWidth < 768
-        const mobileLift = mobile ? smoothstep(0.65, 0.78, progress) * 0.7 : 0
-        rig.position.y = starRollY * (1 - recentre) + mobileLift
-        rig.scale.setScalar(mobile ? 0.78 : 1)
+        rig.position.y = starRollY * (1 - recentre)
+        rig.scale.setScalar(1)
 
         groups.forEach(({ outer, inner, materials, labelMat }, index) => {
           const init = initialPoses[index]
           const star = starPoses[index]
-          const tri = trianglePoses[index]
-          const triR = triangleRotatedPoses[index]
-          const sz = strategyZoomPoses[index]
-          const fd = finalDuoPoses[index]
+          const tri = mobile ? trianglePosesMobile[index] : trianglePoses[index]
+          const triR = mobile ? triangleRotatedPosesMobile[index] : triangleRotatedPoses[index]
+          const sz = mobile ? strategyZoomPosesMobile[index] : strategyZoomPoses[index]
+          const fd = mobile ? finalDuoPosesMobile[index] : finalDuoPoses[index]
           const tEntry = index === 0 ? strategyT : sideT
 
           // Stage 1: initial → star
@@ -854,40 +876,30 @@ export default function AliBridge() {
         </div>
       </div>
 
-      {/* Mobile layout overrides — both columns stack at the bottom (left
-          column above, right column below), full width. Coins occupy upper
-          portion. */}
+      {/* Mobile layout overrides — coin sits at the top of the section,
+          text columns are vertically centered in the middle, full width. */}
       <style jsx>{`
         @media (max-width: 768px) {
-          :global(.ali-bridge-col--left) {
-            top: auto !important;
-            bottom: 38vh !important;
-            left: 5% !important;
-            right: 5% !important;
-            transform: none !important;
-            width: 90% !important;
-            max-height: 32vh;
-            overflow: hidden;
-          }
+          :global(.ali-bridge-col--left),
           :global(.ali-bridge-col--right) {
-            top: auto !important;
-            bottom: 5vh !important;
+            top: 58% !important;
+            bottom: auto !important;
             left: 5% !important;
             right: 5% !important;
-            transform: none !important;
+            transform: translateY(-50%) !important;
             width: 90% !important;
-            max-height: 30vh;
+            max-height: 50vh;
             overflow: hidden;
           }
           :global(.ali-bridge-col h3) {
             font-size: clamp(14px, 4vw, 18px) !important;
-            margin-bottom: 10px !important;
+            margin-bottom: 12px !important;
             text-align: center;
           }
           :global(.ali-bridge-col li) {
             font-size: clamp(12px, 3.4vw, 15px) !important;
-            margin-bottom: 7px !important;
-            padding-left: 16px !important;
+            margin-bottom: 9px !important;
+            padding-left: 18px !important;
           }
         }
       `}</style>
