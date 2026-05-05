@@ -163,8 +163,9 @@ const styles = {
     color: 'var(--ali-gold)',
     fontWeight: 700,
   } as const,
-  // Both columns sit on the LEFT, closer to the coins (which are on the right).
-  // They sequence: "Why strategy fails" first, then "My role" replaces it.
+  // Desktop: columns sit on the LEFT, closer to the coins (which are on the right).
+  // Mobile: columns drop to the bottom of viewport, full width — see media query
+  // in the <style jsx> block below for the override.
   leftColumn: {
     position: 'absolute',
     top: '50%',
@@ -651,15 +652,19 @@ export default function AliBridge() {
           mix(0, Math.PI * 0.5, detachT)
         rig.rotation.set(0, 0, rigSpin)
 
-        // Vertical scroll-tracking — star descends through the viewport
-        // linearly with scroll while the paragraph rises (cross-over parallax).
-        // Updated for the tightened phase ranges: rolling 0.20→0.40, recentre
-        // during detach 0.40→0.48 so the triangle (absolute poses) lands at
-        // (0, 0) — not dragged to y=-0.6 like the old formula was doing.
+        // Vertical scroll-tracking — star descends linearly with scroll
+        // while the paragraph rises (cross-over parallax). Recentres during
+        // detach (0.40→0.48) so the triangle settles at (0, 0).
         const starRollT = clamp((progress - 0.20) / 0.20)
         const starRollY = mix(0.8, -0.8, starRollT)
         const recentre = smoothstep(0.40, 0.48, progress)
-        rig.position.y = starRollY * (1 - recentre)
+        // On mobile, lift the rig +0.9 once the columns have appeared so
+        // coins occupy the upper portion of the viewport, leaving room for
+        // the bottom-positioned text columns.
+        const mobile = window.innerWidth < 768
+        const mobileLift = mobile ? smoothstep(0.50, 0.62, progress) * 0.9 : 0
+        rig.position.y = starRollY * (1 - recentre) + mobileLift
+        rig.scale.setScalar(mobile ? 0.78 : 1)
 
         groups.forEach(({ outer, inner, materials, labelMat }, index) => {
           const init = initialPoses[index]
@@ -821,7 +826,11 @@ export default function AliBridge() {
         </div>
 
         {/* Left column — Why strategy fails */}
-        <div ref={leftColRef} style={styles.leftColumn}>
+        <div
+          ref={leftColRef}
+          className="ali-bridge-col ali-bridge-col--left"
+          style={styles.leftColumn}
+        >
           <h3 ref={leftHeaderRef} style={styles.columnHeader}>
             Why strategy fails:
           </h3>
@@ -842,7 +851,11 @@ export default function AliBridge() {
         </div>
 
         {/* Right column — My role */}
-        <div ref={rightColRef} style={styles.rightColumn}>
+        <div
+          ref={rightColRef}
+          className="ali-bridge-col ali-bridge-col--right"
+          style={styles.rightColumn}
+        >
           <h3 ref={rightHeaderRef} style={styles.columnHeader}>
             My role: design execution governance that enables delivery
           </h3>
@@ -864,6 +877,33 @@ export default function AliBridge() {
           </ul>
         </div>
       </div>
+
+      {/* Mobile layout overrides — drop columns to bottom of viewport,
+          full width, smaller text. Coins still occupy upper portion. */}
+      <style jsx>{`
+        @media (max-width: 768px) {
+          :global(.ali-bridge-col) {
+            top: auto !important;
+            bottom: clamp(40px, 6vh, 64px) !important;
+            left: 5% !important;
+            right: 5% !important;
+            transform: none !important;
+            width: 90% !important;
+            max-height: 42vh;
+            overflow: hidden;
+          }
+          :global(.ali-bridge-col h3) {
+            font-size: clamp(15px, 4.5vw, 20px) !important;
+            margin-bottom: 14px !important;
+            text-align: center;
+          }
+          :global(.ali-bridge-col li) {
+            font-size: clamp(13px, 3.6vw, 16px) !important;
+            margin-bottom: 10px !important;
+            padding-left: 18px !important;
+          }
+        }
+      `}</style>
     </section>
   )
 }
