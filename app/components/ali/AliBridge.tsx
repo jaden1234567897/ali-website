@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-const SECTION_PIN_DISTANCE = 3400
+const SECTION_PIN_DISTANCE = 5000
 
 function clamp(value: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value))
@@ -46,16 +46,37 @@ const starPoses = [
   { x: 0, y: -0.05, z: -0.40, s: 1.5, rx: Math.PI / 2, ry: -0.04, rz: -Math.PI / 3 },
 ]
 
-// Triangle final — Strategy top, AI bottom-LEFT, Execution bottom-RIGHT.
-// Older simpler layout: triangle settles + both text columns appear flanking
-// the coins simultaneously. No rotation/zoom/duo phases.
+// Triangle initial — Strategy top, Execution bottom-LEFT, AI/Gov bottom-RIGHT.
 const trianglePoses = [
   { x: 0, y: 1.05, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },      // Strategy → top
-  { x: -1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 }, // AI → bottom-left
+  { x: 1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },  // Governance → bottom-right
+  { x: -1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 }, // Execution → bottom-left
+]
+
+// Triangle rotated — each coin moves CCW by one vertex.
+const triangleRotatedPoses = [
+  { x: -1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 }, // Strategy → bottom-left
+  { x: 0, y: 1.05, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },      // Governance → top
   { x: 1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },  // Execution → bottom-right
 ]
 
-const COIN_LABELS = ['STRATEGY', 'ARTIFICIAL INTELLIGENCE', 'EXECUTION']
+// Strategy zoom — Strategy moves to RIGHT side, larger and forward.
+// AI/Execution move off-screen so the focus is Strategy alone.
+const strategyZoomPoses = [
+  { x: 1.45, y: 0, z: 1.0, s: 1.65, rx: 0, ry: 0, rz: 0 },  // Strategy → right + zoom
+  { x: 0, y: 4.5, z: -2, s: 0.6, rx: 0, ry: 0, rz: 0 },     // Governance hidden above
+  { x: 0, y: -4.5, z: -2, s: 0.6, rx: 0, ry: 0, rz: 0 },    // Execution hidden below
+]
+
+// Final duo — Strategy hidden, Governance top-right + Execution bottom-right.
+// Both text columns appear on the LEFT side (this is the fix the user wanted).
+const finalDuoPoses = [
+  { x: 0, y: 4.5, z: -2, s: 0.6, rx: 0, ry: 0, rz: 0 },     // Strategy hidden above
+  { x: 1.5, y: 0.65, z: 0.3, s: 1.05, rx: 0, ry: 0, rz: 0 },// Governance → top-right
+  { x: 1.5, y: -0.65, z: 0.3, s: 1.05, rx: 0, ry: 0, rz: 0 },// Execution → bottom-right
+]
+
+const COIN_LABELS = ['STRATEGY', 'GOVERNANCE', 'EXECUTION']
 
 const styles = {
   section: {
@@ -138,24 +159,24 @@ const styles = {
     color: 'var(--ali-gold)',
     fontWeight: 700,
   } as const,
-  // Two columns flank the central triangle: "Why fails" on left, "My role"
-  // on right. Both visible simultaneously after the triangle settles.
-  // Mobile: both stack vertically below the coins (see <style jsx> override).
+  // BOTH columns sit on the LEFT (coins move to right side in zoom + duo).
+  // They sequence: "Why fails" first (during Strategy zoom), then "My role"
+  // replaces it (during Execution + Governance duo).
   leftColumn: {
     position: 'absolute',
     top: '50%',
-    left: 'clamp(28px, 4vw, 80px)',
+    left: 'clamp(60px, 8vw, 180px)',
     transform: 'translateY(-50%)',
-    width: 'clamp(240px, 24vw, 340px)',
+    width: 'clamp(280px, 30vw, 420px)',
     zIndex: 3,
     pointerEvents: 'none',
   } as const,
   rightColumn: {
     position: 'absolute',
     top: '50%',
-    right: 'clamp(28px, 4vw, 80px)',
+    left: 'clamp(60px, 8vw, 180px)',
     transform: 'translateY(-50%)',
-    width: 'clamp(240px, 24vw, 340px)',
+    width: 'clamp(280px, 30vw, 420px)',
     zIndex: 3,
     pointerEvents: 'none',
   } as const,
@@ -279,13 +300,11 @@ export default function AliBridge() {
       )
       tl.to(paragraphRef.current, { opacity: 0, duration: 0.05 }, 0.42)
 
-      // After triangle settles: BOTH columns reveal in parallel and stay
-      // visible. Why-fails on the left, My role on the right. Blur-up
-      // effect on each bullet, staggered one-by-one.
+      // ── Phase E: Strategy zoom on right, "Why fails" reveals on LEFT ──
       tl.to(
         leftHeaderRef.current,
         { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.04 },
-        0.70,
+        0.62,
       )
       tl.to(
         leftBulletsRef.current,
@@ -296,12 +315,26 @@ export default function AliBridge() {
           stagger: 0.022,
           duration: 0.05,
         },
-        0.72,
+        0.64,
       )
+      // ── End Phase E: Strategy + Why fails fade out together ──
+      tl.to(
+        leftHeaderRef.current,
+        { opacity: 0, filter: 'blur(6px)', duration: 0.04 },
+        0.84,
+      )
+      tl.to(
+        leftBulletsRef.current,
+        { opacity: 0, filter: 'blur(6px)', stagger: 0.005, duration: 0.04 },
+        0.84,
+      )
+
+      // ── Phase F: Governance + Execution on right, "My role" reveals
+      //    on LEFT (same column position — "My role" replaces "Why fails") ──
       tl.to(
         rightHeaderRef.current,
         { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.04 },
-        0.74,
+        0.91,
       )
       tl.to(
         rightBulletsRef.current,
@@ -309,10 +342,10 @@ export default function AliBridge() {
           opacity: 1,
           y: 0,
           filter: 'blur(0px)',
-          stagger: 0.028,
+          stagger: 0.022,
           duration: 0.05,
         },
-        0.76,
+        0.93,
       )
     }, section)
 
@@ -574,16 +607,22 @@ export default function AliBridge() {
         mouseEased.x += (mouseTarget.x - mouseEased.x) * follow
         mouseEased.y += (mouseTarget.y - mouseEased.y) * follow
 
-        // ── Phase progresses (simpler version, no rotation/zoom) ──
-        // 0.00 → 0.25  Reverse + star formation
-        // 0.25 → 0.55  Star rolls (paragraph parallax)
-        // 0.55 → 0.70  Detach to triangle
-        // 0.70 → 1.00  Triangle holds; both text columns reveal in parallel
-        //              and stay visible alongside the coins
-        const reverseT = smoothstep(0, 0.25, progress)
-        const starHoldT = smoothstep(0.25, 0.55, progress)
-        const detachT = smoothstep(0.55, 0.70, progress)
-        const aliveT = smoothstep(0.65, 0.85, progress)
+        // ── Phase progresses ──
+        // 0.00 → 0.20  Reverse + star formation
+        // 0.20 → 0.40  Star rolling (paragraph parallax)
+        // 0.40 → 0.48  Detach to triangle
+        // 0.48 → 0.55  Triangle rotates CCW
+        // 0.55 → 0.62  Strategy zooms to right
+        // 0.62 → 0.78  "Why fails" reveals + holds
+        // 0.78 → 0.85  Strategy + bullets fade out, duo arrives
+        // 0.85 → 1.00  "My role" reveals (also on LEFT)
+        const reverseT = smoothstep(0, 0.20, progress)
+        const starHoldT = smoothstep(0.20, 0.40, progress)
+        const detachT = smoothstep(0.40, 0.48, progress)
+        const rotateT = smoothstep(0.48, 0.55, progress)
+        const zoomT = smoothstep(0.55, 0.62, progress)
+        const duoT = smoothstep(0.84, 0.91, progress)
+        const aliveT = smoothstep(0.48, 0.55, progress) * (1 - smoothstep(0.55, 0.62, progress))
 
         // Per-coin entry timing — Strategy first, AI/Execution delayed
         const strategyT = smoothstep(0, 0.65, reverseT)
@@ -614,6 +653,9 @@ export default function AliBridge() {
           const init = initialPoses[index]
           const star = starPoses[index]
           const tri = trianglePoses[index]
+          const triR = triangleRotatedPoses[index]
+          const sz = strategyZoomPoses[index]
+          const fd = finalDuoPoses[index]
           const tEntry = index === 0 ? strategyT : sideT
 
           // Stage 1: initial → star
@@ -625,8 +667,7 @@ export default function AliBridge() {
           let ry = mix(init.ry, star.ry, tEntry)
           let rz = mix(init.rz, star.rz, tEntry)
 
-          // Stage 2: star → triangle (final pose — coins stay here through
-          // the rest of the section while the side columns reveal beside them)
+          // Stage 2: star → triangle
           x = mix(x, tri.x, detachT)
           y = mix(y, tri.y, detachT)
           z = mix(z, tri.z, detachT)
@@ -635,18 +676,54 @@ export default function AliBridge() {
           ry = mix(ry, tri.ry, detachT)
           rz = mix(rz, tri.rz, detachT)
 
+          // Stage 3: triangle → triangle rotated (CCW one vertex)
+          x = mix(x, triR.x, rotateT)
+          y = mix(y, triR.y, rotateT)
+          z = mix(z, triR.z, rotateT)
+          s = mix(s, triR.s, rotateT)
+          rx = mix(rx, triR.rx, rotateT)
+          ry = mix(ry, triR.ry, rotateT)
+          rz = mix(rz, triR.rz, rotateT)
+
+          // Stage 4: rotated → strategy zoom (Strategy on right, others off-screen)
+          x = mix(x, sz.x, zoomT)
+          y = mix(y, sz.y, zoomT)
+          z = mix(z, sz.z, zoomT)
+          s = mix(s, sz.s, zoomT)
+          rx = mix(rx, sz.rx, zoomT)
+          ry = mix(ry, sz.ry, zoomT)
+          rz = mix(rz, sz.rz, zoomT)
+
+          // Stage 5: zoom → duo (Strategy gone, Governance + Execution on right)
+          x = mix(x, fd.x, duoT)
+          y = mix(y, fd.y, duoT)
+          z = mix(z, fd.z, duoT)
+          s = mix(s, fd.s, duoT)
+          rx = mix(rx, fd.rx, duoT)
+          ry = mix(ry, fd.ry, duoT)
+          rz = mix(rz, fd.rz, duoT)
+
           outer.position.set(x, y, z)
           outer.scale.setScalar(s)
           outer.rotation.set(0, 0, rz)
 
-          // Hover-alive: each coin tilts gently toward cursor + subtle breathing
           const hoverTiltX = mouseEased.y * 0.18 * aliveT
           const hoverTiltY = mouseEased.x * 0.22 * aliveT
           const breathe = aliveT * Math.sin(time * 0.6 + index * 1.7) * 0.025
           inner.rotation.set(rx + hoverTiltX + breathe, ry + hoverTiltY, 0)
 
-          // Solid coins. Just fade in on entry — no per-phase opacity changes.
-          const coinOpacity = mix(0, 1, tEntry)
+          // Per-coin per-phase opacity:
+          // Strategy fades out as duo phase begins.
+          // Governance + Execution fade out during zoom (Strategy alone),
+          // fade back in during duo.
+          let coinOpacity = mix(0, 1, tEntry)
+          if (index === 0) {
+            coinOpacity = mix(coinOpacity, 0, duoT)
+          } else {
+            coinOpacity = mix(coinOpacity, 0, zoomT)
+            coinOpacity = mix(coinOpacity, 1, duoT)
+          }
+
           materials.forEach(m => {
             m.opacity = coinOpacity
           })
