@@ -2737,10 +2737,12 @@ h1 span {
   cursor: pointer;
   transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
   perspective: 1800px;
-  /* Isolate paint so the page's scroll repaints don't get tangled with the
-     book's hover transforms — was causing visible scroll+hover jank. */
-  contain: layout paint;
+  /* Layout containment only — paint containment was clipping the swung-open
+     cover at the left edge ("cut left page"). Layout still isolates reflow. */
+  contain: layout;
   will-change: transform;
+  /* Allow the open cover to swing past the book's bounds without being clipped. */
+  overflow: visible;
 }
 
 .ali-book:hover {
@@ -2755,6 +2757,7 @@ h1 span {
   transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
   transform: rotateY(0deg);
   will-change: transform;
+  overflow: visible;
 }
 
 .ali-book:hover .ali-book-stage {
@@ -2766,14 +2769,42 @@ h1 span {
   position: absolute;
   inset: 0;
   border-radius: 2px 8px 8px 2px;
-  overflow: hidden;
 }
 
+.ali-book-inside { overflow: hidden; }
+
+/* The cover element is a 3D pivot — it holds two faces (front + back).
+   The cover itself has no visual styling; the front and back children do. */
 .ali-book-cover {
-  background: linear-gradient(135deg, var(--book-color-1, #1f1f1f), var(--book-color-2, #0a0a0a));
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  transform: translateZ(0) rotateY(0deg);
+  transition: transform 850ms cubic-bezier(0.65, 0.05, 0.36, 1);
+  z-index: 2;
+  will-change: transform;
+}
+
+.ali-book[data-open="true"] .ali-book-cover {
+  transform: translateZ(0) rotateY(-138deg);
+}
+
+/* Front face — what you see when the book is closed. */
+.ali-book-cover-front,
+.ali-book-cover-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px 8px 8px 2px;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.ali-book-cover-front {
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 14px),
+    linear-gradient(270deg, rgba(255, 255, 255, 0.06), transparent 4px),
+    linear-gradient(135deg, var(--book-color-1, #1f1f1f), var(--book-color-2, #0a0a0a));
   box-shadow:
-    inset 6px 0 12px rgba(0, 0, 0, 0.35),
-    inset -2px 0 4px rgba(255, 255, 255, 0.06),
     0 12px 30px rgba(13, 13, 13, 0.18),
     0 30px 60px rgba(13, 13, 13, 0.12);
   display: flex;
@@ -2781,23 +2812,31 @@ h1 span {
   justify-content: space-between;
   padding: 32px 28px 32px 44px;
   color: rgba(255, 255, 255, 0.94);
-  /* Hinge on the left edge so the cover swings open */
-  transform-origin: left center;
-  transform: rotateY(0deg);
-  /* Only transition transform — animating box-shadow forces a paint on every
-     frame and was the main cause of the scroll+hover lag. */
-  transition: transform 1100ms cubic-bezier(0.65, 0.05, 0.36, 1);
-  z-index: 2;
-  backface-visibility: visible;
-  -webkit-backface-visibility: visible;
-  will-change: transform;
 }
 
-.ali-book[data-open="true"] .ali-book-cover {
-  transform: rotateY(-155deg);
+/* Back face — what you see when the cover is swung open. Cream paper inner
+   cover with a soft gold border, like a real hardcover endpaper. */
+.ali-book-cover-back {
+  transform: rotateY(180deg);
+  background:
+    linear-gradient(270deg, rgba(0, 0, 0, 0.18), transparent 14px),
+    linear-gradient(135deg, #f7f1e3, #ece2c8);
+  box-shadow:
+    0 12px 30px rgba(13, 13, 13, 0.18),
+    0 30px 60px rgba(13, 13, 13, 0.12);
+  border-radius: 8px 2px 2px 8px;
 }
 
-.ali-book-cover::before {
+.ali-book-cover-back::after {
+  content: "";
+  position: absolute;
+  inset: 18px 32px 18px 16px;
+  border: 1px solid rgba(196, 151, 58, 0.45);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.ali-book-cover-front::before {
   content: "";
   position: absolute;
   left: 0;
@@ -2807,7 +2846,7 @@ h1 span {
   background: linear-gradient(90deg, rgba(0, 0, 0, 0.5), transparent);
 }
 
-.ali-book-cover::after {
+.ali-book-cover-front::after {
   content: "";
   position: absolute;
   inset: 16px 16px 16px 32px;

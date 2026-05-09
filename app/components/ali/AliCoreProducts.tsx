@@ -178,18 +178,23 @@ function BookEl({
       }}
     >
       <div className="ali-book-stage">
-        {/* Cover (front face) */}
+        {/* Cover (3D pivot — front + back face). When the book opens, the
+            cover swings on its left hinge and the cream "endpaper" back
+            face becomes visible, like a real hardcover book. */}
         <div className="ali-book-cover">
-          <div>
-            <div className="ali-book-mark">{book.mark}</div>
+          <div className="ali-book-cover-front">
+            <div>
+              <div className="ali-book-mark">{book.mark}</div>
+            </div>
+            <div className="ali-book-title" style={{ whiteSpace: 'pre-line' }}>
+              {book.title}
+            </div>
+            <div className="ali-book-foot">
+              <span>{book.subtitle}</span>
+              <span aria-hidden="true">↗</span>
+            </div>
           </div>
-          <div className="ali-book-title" style={{ whiteSpace: 'pre-line' }}>
-            {book.title}
-          </div>
-          <div className="ali-book-foot">
-            <span>{book.subtitle}</span>
-            <span aria-hidden="true">↗</span>
-          </div>
+          <div className="ali-book-cover-back" aria-hidden="true" />
         </div>
 
         {/* Inside (back face — rotated 180) */}
