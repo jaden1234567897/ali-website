@@ -55,6 +55,8 @@ next-env.d.ts
 !public/ali-photo.jpg
 !public/aboutme*.jpg
 !public/aboutme*.jpeg
+!public/aboutme*.webp
 !public/alii.webp
 # Pinterest gallery images (timestamped filenames from the original source)
 !public/15[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.jpg
+!public/15[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.webp

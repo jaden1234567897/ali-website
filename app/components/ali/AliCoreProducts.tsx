@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 
 type Book = {
@@ -83,19 +83,37 @@ const BOOKS: Book[] = [
   },
 ]
 
+// Hover-intent dwell time — the cursor must rest on a book this long before
+// it opens. Stops the cover from animating mid-scroll when the cursor just
+// happens to pass over a book as the section enters the viewport.
+const HOVER_INTENT_MS = 220
+
 export default function AliCoreProducts() {
   const [openId, setOpenId] = useState<string | null>(null)
   const [isTouch, setIsTouch] = useState(false)
+  const dwellTimerRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     setIsTouch(window.matchMedia('(pointer: coarse)').matches)
+    return () => {
+      if (dwellTimerRef.current) window.clearTimeout(dwellTimerRef.current)
+    }
   }, [])
 
   const handleEnter = (id: string) => {
-    if (!isTouch) setOpenId(id)
+    if (isTouch) return
+    if (dwellTimerRef.current) window.clearTimeout(dwellTimerRef.current)
+    dwellTimerRef.current = window.setTimeout(() => {
+      setOpenId(id)
+    }, HOVER_INTENT_MS)
   }
   const handleLeave = () => {
-    if (!isTouch) setOpenId(null)
+    if (isTouch) return
+    if (dwellTimerRef.current) {
+      window.clearTimeout(dwellTimerRef.current)
+      dwellTimerRef.current = undefined
+    }
+    setOpenId(null)
   }
   const handleTap = (id: string) => {
     if (isTouch) setOpenId(prev => (prev === id ? null : id))
