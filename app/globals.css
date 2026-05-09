@@ -2737,10 +2737,14 @@ h1 span {
   cursor: pointer;
   transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
   perspective: 1800px;
+  /* Isolate paint so the page's scroll repaints don't get tangled with the
+     book's hover transforms — was causing visible scroll+hover jank. */
+  contain: layout paint;
+  will-change: transform;
 }
 
 .ali-book:hover {
-  transform: translateY(-8px);
+  transform: translate3d(0, -8px, 0);
 }
 
 .ali-book-stage {
@@ -2750,6 +2754,7 @@ h1 span {
   transform-style: preserve-3d;
   transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
   transform: rotateY(0deg);
+  will-change: transform;
 }
 
 .ali-book:hover .ali-book-stage {
@@ -2765,7 +2770,7 @@ h1 span {
 }
 
 .ali-book-cover {
-  background: linear-gradient(135deg, var(--book-color-1, #1a2e4a), var(--book-color-2, #0d1a2e));
+  background: linear-gradient(135deg, var(--book-color-1, #1f1f1f), var(--book-color-2, #0a0a0a));
   box-shadow:
     inset 6px 0 12px rgba(0, 0, 0, 0.35),
     inset -2px 0 4px rgba(255, 255, 255, 0.06),
@@ -2779,7 +2784,9 @@ h1 span {
   /* Hinge on the left edge so the cover swings open */
   transform-origin: left center;
   transform: rotateY(0deg);
-  transition: transform 1100ms cubic-bezier(0.65, 0.05, 0.36, 1), box-shadow 800ms ease;
+  /* Only transition transform — animating box-shadow forces a paint on every
+     frame and was the main cause of the scroll+hover lag. */
+  transition: transform 1100ms cubic-bezier(0.65, 0.05, 0.36, 1);
   z-index: 2;
   backface-visibility: visible;
   -webkit-backface-visibility: visible;
@@ -2788,11 +2795,6 @@ h1 span {
 
 .ali-book[data-open="true"] .ali-book-cover {
   transform: rotateY(-155deg);
-  box-shadow:
-    inset 6px 0 12px rgba(0, 0, 0, 0.35),
-    inset -2px 0 4px rgba(255, 255, 255, 0.06),
-    -8px 12px 30px rgba(13, 13, 13, 0.28),
-    0 30px 60px rgba(13, 13, 13, 0.18);
 }
 
 .ali-book-cover::before {
@@ -2962,10 +2964,12 @@ h1 span {
   left: 5%;
   right: 5%;
   height: 24px;
-  background: radial-gradient(ellipse at center, rgba(13, 13, 13, 0.22), transparent 70%);
-  filter: blur(12px);
+  /* Wider, softer radial gradient replaces the previous filter: blur(12px) —
+     same look, no per-frame blur repaint. */
+  background: radial-gradient(ellipse 60% 100% at 50% 50%, rgba(13, 13, 13, 0.22), transparent 75%);
   transition: opacity 600ms ease, transform 600ms ease;
   z-index: -1;
+  pointer-events: none;
 }
 
 .ali-book[data-open="true"] .ali-book-shadow {

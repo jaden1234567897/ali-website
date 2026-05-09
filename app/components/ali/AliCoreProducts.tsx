@@ -26,8 +26,8 @@ const BOOKS: Book[] = [
     mark: 'Vol. 01',
     title: 'Strategy\nAdvisory',
     subtitle: 'Authority · Expertise',
-    color1: '#1a2a44',
-    color2: '#0a1628',
+    color1: '#1f1f1f',
+    color2: '#0a0a0a',
     inside: {
       eyebrow: 'Authority & Expertise',
       heading: 'Closing the gap from the boardroom out',
@@ -46,8 +46,8 @@ const BOOKS: Book[] = [
     mark: 'Vol. 02',
     title: 'Digital\nMaterials',
     subtitle: 'Templates · Frameworks',
-    color1: '#2a3d2a',
-    color2: '#162216',
+    color1: '#1f1f1f',
+    color2: '#0a0a0a',
     inside: {
       eyebrow: 'Templates & Frameworks',
       heading: 'Tools your team will actually use',
@@ -66,8 +66,8 @@ const BOOKS: Book[] = [
     mark: 'Vol. 03',
     title: '1:1\nConsultations',
     subtitle: 'Booking · Direct',
-    color1: '#3a2a1a',
-    color2: '#1f1610',
+    color1: '#1f1f1f',
+    color2: '#0a0a0a',
     inside: {
       eyebrow: 'Booking & Direct',
       heading: 'Work with Ali, one-on-one',
