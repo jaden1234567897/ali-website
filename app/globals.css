@@ -2889,20 +2889,18 @@ h1 span {
 }
 
 .ali-book-inside {
-  background: var(--ali-white);
   padding: 32px 28px 32px 36px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow:
-    inset 8px 0 14px rgba(13, 13, 13, 0.06),
-    inset -2px 0 6px rgba(13, 13, 13, 0.04);
   z-index: 1;
-  /* The "page" is visible behind the closed cover */
   transform: rotateY(0deg);
-  /* Subtle ruled line at the spine */
-  background-image:
-    linear-gradient(90deg, rgba(13, 13, 13, 0.08), transparent 14px),
+  /* Inset shadows replaced with overlay gradients — keeps the page-edge
+     darkening at the spine without forcing a paint pass when the cover
+     reveals the inside. */
+  background:
+    linear-gradient(90deg, rgba(13, 13, 13, 0.10), transparent 14px),
+    linear-gradient(270deg, rgba(13, 13, 13, 0.06), transparent 6px),
     linear-gradient(135deg, var(--ali-white), #FAF7F1);
   opacity: 0;
   transition: opacity 500ms ease 250ms;

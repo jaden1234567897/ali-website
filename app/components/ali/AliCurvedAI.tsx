@@ -1,79 +1,33 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import Image from 'next/image'
+import { useRef, useState } from 'react'
+import { motion, useInView } from 'framer-motion'
 
-// Distorted Gallery — cinematic 3D perspective carousel
-// • Active image centered, full-size
-// • Surrounding images rotate / distort to the sides
-// • Autoplay every 7s
-// • Arrow buttons + keyboard arrow keys + touch swipe navigation
-// • Hover lifts brightness + shadow for active card
+// Pinterest-style masonry: 3 columns on desktop → 2 on tablet → 1 on mobile.
+// Each image keeps its natural aspect ratio so columns flow with varied
+// heights, the way a real Pinterest board does.
 const IMAGES = [
-  '/ali-photo.jpg',
+  '/1568825693603_LE_upscale_prime.jpg',
+  '/1577510049318.jpg',
+  '/1580212578575.jpg',
+  '/1582113313095.jpg',
+  '/1582113314409.jpg',
   '/aboutme%202.jpg',
   '/aboutme%203.jpg',
   '/aboutme%204.jpg',
   '/aboutme%205.jpg',
 ]
 
-const AUTOPLAY_MS = 7000
-const TRANSITION_MS = 700
+const COLUMN_COUNT = 3
+
+function distribute(images: string[], cols: number) {
+  const out: string[][] = Array.from({ length: cols }, () => [])
+  images.forEach((src, i) => out[i % cols].push(src))
+  return out
+}
 
 export default function AliCurvedAI() {
-  const [active, setActive] = useState(0)
-  const total = IMAGES.length
-  const containerRef = useRef<HTMLDivElement>(null)
-  const touchStartX = useRef<number | null>(null)
-  const lastUserActionAt = useRef<number>(0)
-
-  const goNext = useCallback(() => {
-    setActive(prev => (prev + 1) % total)
-    lastUserActionAt.current = Date.now()
-  }, [total])
-  const goPrev = useCallback(() => {
-    setActive(prev => (prev - 1 + total) % total)
-    lastUserActionAt.current = Date.now()
-  }, [total])
-  const goTo = useCallback((idx: number) => {
-    setActive(idx)
-    lastUserActionAt.current = Date.now()
-  }, [])
-
-  // Autoplay (pauses for 1 cycle after user interaction)
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      if (Date.now() - lastUserActionAt.current < AUTOPLAY_MS) return
-      setActive(prev => (prev + 1) % total)
-    }, AUTOPLAY_MS)
-    return () => window.clearInterval(id)
-  }, [total])
-
-  // Keyboard navigation
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') goNext()
-      else if (e.key === 'ArrowLeft') goPrev()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [goNext, goPrev])
-
-  // Touch swipe navigation
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0]?.clientX ?? null
-  }
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current == null) return
-    const endX = e.changedTouches[0]?.clientX ?? touchStartX.current
-    const dx = endX - touchStartX.current
-    if (Math.abs(dx) > 60) {
-      if (dx > 0) goPrev()
-      else goNext()
-    }
-    touchStartX.current = null
-  }
+  const columns = distribute(IMAGES, COLUMN_COUNT)
 
   return (
     <section
@@ -83,7 +37,6 @@ export default function AliCurvedAI() {
         width: '100%',
         background: 'var(--ali-cream)',
         padding: 'clamp(80px, 10vw, 140px) clamp(20px, 5vw, 96px)',
-        overflow: 'hidden',
       }}
       aria-label="Ali Al-Ali — Gallery"
     >
@@ -120,189 +73,84 @@ export default function AliCurvedAI() {
           From the work, the room, the field.
         </h2>
 
-        {/* 3D stage */}
-        <div
-          ref={containerRef}
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-          style={{
-            position: 'relative',
-            width: '100%',
-            height: 'clamp(360px, 56vh, 620px)',
-            perspective: 1600,
-            perspectiveOrigin: '50% 50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto',
-            userSelect: 'none',
-          }}
-          role="region"
-          aria-roledescription="carousel"
-          aria-live="polite"
-        >
-          {IMAGES.map((src, i) => {
-            // Compute the shortest signed distance from active in either direction
-            let offset = i - active
-            if (offset > total / 2) offset -= total
-            if (offset < -total / 2) offset += total
-
-            const abs = Math.abs(offset)
-            const isActive = offset === 0
-
-            // 3D distortion math:
-            // active: front, full size, no rotation
-            // ±1: tilted 35°, pushed back, slightly smaller
-            // ±2: tilted 55°, pushed further back, smallest
-            const rotateY = offset === 0 ? 0 : Math.sign(offset) * (35 + (abs - 1) * 20)
-            const translateX = offset * 38 // % of base width
-            const translateZ = offset === 0 ? 0 : -120 - (abs - 1) * 100
-            const scale = offset === 0 ? 1 : 0.85 - (abs - 1) * 0.08
-            const opacity = abs <= 2 ? 1 - (abs - 0) * 0.08 : 0
-            const zIndex = 10 - abs
-
-            return (
-              <div
-                key={src}
-                aria-hidden={!isActive}
-                onClick={() => goTo(i)}
-                style={{
-                  position: 'absolute',
-                  width: 'min(64vw, 720px)',
-                  height: '100%',
-                  borderRadius: 18,
-                  overflow: 'hidden',
-                  cursor: isActive ? 'default' : 'pointer',
-                  transformStyle: 'preserve-3d',
-                  transform: `translate(-50%, 0) translateX(${translateX}%) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
-                  left: '50%',
-                  transition: `transform ${TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${TRANSITION_MS}ms ease, filter ${TRANSITION_MS}ms ease`,
-                  willChange: 'transform, opacity',
-                  zIndex,
-                  opacity,
-                  boxShadow: isActive
-                    ? '0 30px 80px -20px rgba(20,20,40,0.5), 0 10px 24px -10px rgba(20,20,40,0.3)'
-                    : '0 12px 30px -10px rgba(20,20,40,0.25)',
-                  border: '1px solid rgba(0,0,0,0.06)',
-                  background: '#fff',
-                  filter: isActive ? 'brightness(1)' : 'brightness(0.78)',
-                }}
-                onMouseEnter={e => {
-                  if (isActive) {
-                    e.currentTarget.style.boxShadow =
-                      '0 36px 90px -18px rgba(20,20,40,0.55), 0 12px 28px -10px rgba(20,20,40,0.35)'
-                    e.currentTarget.style.filter = 'brightness(1.05)'
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (isActive) {
-                    e.currentTarget.style.boxShadow =
-                      '0 30px 80px -20px rgba(20,20,40,0.5), 0 10px 24px -10px rgba(20,20,40,0.3)'
-                    e.currentTarget.style.filter = 'brightness(1)'
-                  }
-                }}
-              >
-                <Image
+        <div className="ali-gallery-grid">
+          {columns.map((colImages, colIdx) => (
+            <div key={colIdx} className="ali-gallery-col">
+              {colImages.map((src, i) => (
+                <GalleryImage
+                  key={src}
                   src={src}
-                  alt={`Gallery image ${i + 1}`}
-                  fill
-                  sizes="(max-width: 768px) 90vw, 720px"
-                  quality={95}
-                  priority={isActive}
-                  draggable={false}
-                  style={{
-                    objectFit: 'cover',
-                    objectPosition: 'center',
-                    pointerEvents: 'none',
-                  }}
+                  alt={`Gallery image ${colIdx * 100 + i + 1}`}
                 />
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Controls — arrows + dot indicator */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 24,
-            marginTop: 48,
-          }}
-        >
-          <button
-            type="button"
-            onClick={goPrev}
-            aria-label="Previous image"
-            style={{
-              width: 46,
-              height: 46,
-              borderRadius: '50%',
-              border: '1px solid var(--ali-line)',
-              background: 'transparent',
-              color: 'var(--ali-ink)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'background 0.2s, border-color 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(212, 178, 87, 0.1)'
-              e.currentTarget.style.borderColor = 'var(--ali-gold)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'transparent'
-              e.currentTarget.style.borderColor = 'var(--ali-line)'
-            }}
-          >
-            <ChevronLeft size={20} />
-          </button>
-
-          <div
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 14,
-              letterSpacing: '0.18em',
-              color: 'var(--ali-muted)',
-              minWidth: 60,
-              textAlign: 'center',
-            }}
-          >
-            {String(active + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
-          </div>
-
-          <button
-            type="button"
-            onClick={goNext}
-            aria-label="Next image"
-            style={{
-              width: 46,
-              height: 46,
-              borderRadius: '50%',
-              border: '1px solid var(--ali-line)',
-              background: 'transparent',
-              color: 'var(--ali-ink)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'background 0.2s, border-color 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(212, 178, 87, 0.1)'
-              e.currentTarget.style.borderColor = 'var(--ali-gold)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'transparent'
-              e.currentTarget.style.borderColor = 'var(--ali-line)'
-            }}
-          >
-            <ChevronRight size={20} />
-          </button>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
+
+      <style jsx>{`
+        .ali-gallery-grid {
+          display: grid;
+          grid-template-columns: repeat(${COLUMN_COUNT}, 1fr);
+          gap: 18px;
+        }
+        .ali-gallery-col {
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+        @media (max-width: 880px) {
+          .ali-gallery-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+          }
+          .ali-gallery-col {
+            gap: 14px;
+          }
+        }
+        @media (max-width: 560px) {
+          .ali-gallery-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
     </section>
+  )
+}
+
+function GalleryImage({ src, alt }: { src: string; alt: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const isInView = useInView(ref, { once: true, margin: '-50px' })
+  const [loaded, setLoaded] = useState(false)
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 24 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      style={{
+        width: '100%',
+        borderRadius: 12,
+        overflow: 'hidden',
+        background: 'rgba(20, 20, 30, 0.05)',
+        border: '1px solid rgba(0, 0, 0, 0.06)',
+        boxShadow: '0 8px 24px -12px rgba(20, 20, 40, 0.18)',
+      }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        style={{
+          width: '100%',
+          height: 'auto',
+          display: 'block',
+          opacity: loaded ? 1 : 0,
+          transition: 'opacity 800ms ease',
+        }}
+      />
+    </motion.div>
   )
 }
