@@ -2737,12 +2737,20 @@ h1 span {
   cursor: pointer;
   transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
   perspective: 1800px;
-  /* Layout containment only — paint containment was clipping the swung-open
-     cover at the left edge ("cut left page"). Layout still isolates reflow. */
-  contain: layout;
+  /* Style + layout containment so a hover on one book doesn't invalidate
+     style for the rest of the shelf. Paint containment is still off so the
+     swung-open cover isn't clipped. */
+  contain: layout style;
   will-change: transform;
-  /* Allow the open cover to swing past the book's bounds without being clipped. */
   overflow: visible;
+  /* New stacking context — keeps the compositor from merging this book's
+     layers with surrounding content during the rotation. */
+  isolation: isolate;
+  /* Drop-shadow lives on the (non-rotating) book element — was previously
+     on each rotating cover face, where it had to re-rasterize per frame
+     because shadows are clipped to the layer's screen-space bounds. */
+  filter: drop-shadow(0 12px 30px rgba(13, 13, 13, 0.18))
+    drop-shadow(0 30px 60px rgba(13, 13, 13, 0.12));
 }
 
 .ali-book:hover {
@@ -2754,10 +2762,6 @@ h1 span {
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  /* Stage no longer tilts on hover — that second 3D transform was
-     compounding with the cover's rotation and doubling per-frame
-     GPU work, which showed up as scroll+hover jank. */
-  transform: rotateY(0deg);
   overflow: visible;
 }
 
@@ -2772,21 +2776,24 @@ h1 span {
 .ali-book-inside { overflow: hidden; }
 
 /* The cover element is a 3D pivot — it holds two faces (front + back).
-   The cover itself has no visual styling; the front and back children do. */
+   It has no visual styling of its own; the faces carry the look. */
 .ali-book-cover {
   transform-style: preserve-3d;
   transform-origin: left center;
-  transform: translateZ(0) rotateY(0deg);
+  transform: translate3d(0, 0, 0) rotateY(0deg);
   transition: transform 850ms cubic-bezier(0.65, 0.05, 0.36, 1);
   z-index: 2;
   will-change: transform;
 }
 
 .ali-book[data-open="true"] .ali-book-cover {
-  transform: translateZ(0) rotateY(-138deg);
+  transform: translate3d(0, 0, 0) rotateY(-138deg);
 }
 
-/* Front face — what you see when the book is closed. */
+/* Both faces — pre-promoted to their own GPU layers (translateZ + will-change)
+   so the rotation is composite-only: the browser caches the rasterized
+   gradients once and just re-orients the layer per frame, instead of
+   repainting the front/back content during every step of the swing. */
 .ali-book-cover-front,
 .ali-book-cover-back {
   position: absolute;
@@ -2795,16 +2802,15 @@ h1 span {
   overflow: hidden;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  will-change: transform;
 }
 
 .ali-book-cover-front {
+  transform: translate3d(0, 0, 0);
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 14px),
     linear-gradient(270deg, rgba(255, 255, 255, 0.06), transparent 4px),
     linear-gradient(135deg, var(--book-color-1, #1f1f1f), var(--book-color-2, #0a0a0a));
-  box-shadow:
-    0 12px 30px rgba(13, 13, 13, 0.18),
-    0 30px 60px rgba(13, 13, 13, 0.12);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -2815,13 +2821,10 @@ h1 span {
 /* Back face — what you see when the cover is swung open. Cream paper inner
    cover with a soft gold border, like a real hardcover endpaper. */
 .ali-book-cover-back {
-  transform: rotateY(180deg);
+  transform: translate3d(0, 0, 0) rotateY(180deg);
   background:
     linear-gradient(270deg, rgba(0, 0, 0, 0.18), transparent 14px),
     linear-gradient(135deg, #f7f1e3, #ece2c8);
-  box-shadow:
-    0 12px 30px rgba(13, 13, 13, 0.18),
-    0 30px 60px rgba(13, 13, 13, 0.12);
   border-radius: 8px 2px 2px 8px;
 }
 
@@ -2994,22 +2997,11 @@ h1 span {
 }
 
 .ali-book-shadow {
-  position: absolute;
-  bottom: -30px;
-  left: 5%;
-  right: 5%;
-  height: 24px;
-  /* Wider, softer radial gradient replaces the previous filter: blur(12px) —
-     same look, no per-frame blur repaint. */
-  background: radial-gradient(ellipse 60% 100% at 50% 50%, rgba(13, 13, 13, 0.22), transparent 75%);
-  transition: opacity 600ms ease, transform 600ms ease;
-  z-index: -1;
-  pointer-events: none;
-}
-
-.ali-book[data-open="true"] .ali-book-shadow {
-  transform: scaleX(1.4);
-  opacity: 0.7;
+  /* The drop-shadow on .ali-book itself now provides the grounding shadow,
+     so this element is no longer needed. Hidden completely — we keep the
+     class in the JSX so future iterations can re-enable it without a
+     React change, but it draws nothing today. */
+  display: none;
 }
 
 @media (max-width: 880px) {

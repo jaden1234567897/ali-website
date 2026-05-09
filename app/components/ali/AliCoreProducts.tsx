@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 
 type Book = {
@@ -100,24 +100,32 @@ export default function AliCoreProducts() {
     }
   }, [])
 
-  const handleEnter = (id: string) => {
-    if (isTouch) return
-    if (dwellTimerRef.current) window.clearTimeout(dwellTimerRef.current)
-    dwellTimerRef.current = window.setTimeout(() => {
-      setOpenId(id)
-    }, HOVER_INTENT_MS)
-  }
-  const handleLeave = () => {
+  // Stable handler refs so memoised BookEls don't re-render on parent state
+  // changes — only the book whose `open` prop actually flips will update.
+  const handleEnter = useCallback(
+    (id: string) => {
+      if (isTouch) return
+      if (dwellTimerRef.current) window.clearTimeout(dwellTimerRef.current)
+      dwellTimerRef.current = window.setTimeout(() => {
+        setOpenId(id)
+      }, HOVER_INTENT_MS)
+    },
+    [isTouch],
+  )
+  const handleLeave = useCallback(() => {
     if (isTouch) return
     if (dwellTimerRef.current) {
       window.clearTimeout(dwellTimerRef.current)
       dwellTimerRef.current = undefined
     }
     setOpenId(null)
-  }
-  const handleTap = (id: string) => {
-    if (isTouch) setOpenId(prev => (prev === id ? null : id))
-  }
+  }, [isTouch])
+  const handleTap = useCallback(
+    (id: string) => {
+      if (isTouch) setOpenId(prev => (prev === id ? null : id))
+    },
+    [isTouch],
+  )
 
   return (
     <section id="products" className="ali-section ali-products">
@@ -145,9 +153,9 @@ export default function AliCoreProducts() {
               <BookEl
                 book={book}
                 open={openId === book.id}
-                onEnter={() => handleEnter(book.id)}
+                onEnter={handleEnter}
                 onLeave={handleLeave}
-                onTap={() => handleTap(book.id)}
+                onTap={handleTap}
                 isTouch={isTouch}
               />
             </motion.div>
@@ -158,7 +166,9 @@ export default function AliCoreProducts() {
   )
 }
 
-function BookEl({
+// Memoised so a hover on book A doesn't re-render books B and C — only
+// the book whose `open` prop actually changes will repaint.
+const BookEl = memo(function BookEl({
   book,
   open,
   onEnter,
@@ -168,18 +178,21 @@ function BookEl({
 }: {
   book: Book
   open: boolean
-  onEnter: () => void
+  onEnter: (id: string) => void
   onLeave: () => void
-  onTap: () => void
+  onTap: (id: string) => void
   isTouch: boolean
 }) {
+  const handleEnter = useCallback(() => onEnter(book.id), [onEnter, book.id])
+  const handleTap = useCallback(() => onTap(book.id), [onTap, book.id])
+
   return (
     <div
       className="ali-book"
       data-open={open}
-      onMouseEnter={onEnter}
+      onMouseEnter={handleEnter}
       onMouseLeave={onLeave}
-      onClick={onTap}
+      onClick={handleTap}
       role="button"
       tabIndex={0}
       aria-expanded={open}
@@ -187,7 +200,7 @@ function BookEl({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
-          onTap()
+          handleTap()
         }
       }}
       style={{
@@ -238,4 +251,4 @@ function BookEl({
       <div className="ali-book-shadow" aria-hidden="true" />
     </div>
   )
-}
+})

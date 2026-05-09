@@ -47,17 +47,20 @@ const starPoses = [
 ]
 
 // Triangle initial — Strategy top, Execution bottom-LEFT, AI/Gov bottom-RIGHT.
+// Y values shifted +0.4 so the visual centre of the triangle (which is
+// pulled downward by the two bottom coins outweighing the single top one)
+// sits at the geometric middle of the viewport.
 const trianglePoses = [
-  { x: 0, y: 1.05, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },      // Strategy → top
-  { x: 1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },  // Governance → bottom-right
-  { x: -1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 }, // Execution → bottom-left
+  { x: 0, y: 1.45, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },      // Strategy → top
+  { x: 1.55, y: -0.35, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },  // Governance → bottom-right
+  { x: -1.55, y: -0.35, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 }, // Execution → bottom-left
 ]
 
 // Triangle rotated — each coin moves CCW by one vertex.
 const triangleRotatedPoses = [
-  { x: -1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 }, // Strategy → bottom-left
-  { x: 0, y: 1.05, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },      // Governance → top
-  { x: 1.55, y: -0.75, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },  // Execution → bottom-right
+  { x: -1.55, y: -0.35, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 }, // Strategy → bottom-left
+  { x: 0, y: 1.45, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },      // Governance → top
+  { x: 1.55, y: -0.35, z: 0, s: 1.25, rx: 0, ry: 0, rz: 0 },  // Execution → bottom-right
 ]
 
 // Strategy zoom — Strategy moves to RIGHT side, larger and forward.
