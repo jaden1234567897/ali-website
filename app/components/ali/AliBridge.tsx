@@ -204,7 +204,7 @@ const styles = {
     top: '50%',
     left: 'clamp(60px, 8vw, 180px)',
     transform: 'translateY(-50%)',
-    width: 'clamp(280px, 30vw, 420px)',
+    width: 'clamp(320px, 36vw, 520px)',
     zIndex: 3,
     pointerEvents: 'none',
   } as const,
@@ -213,16 +213,16 @@ const styles = {
     top: '50%',
     left: 'clamp(60px, 8vw, 180px)',
     transform: 'translateY(-50%)',
-    width: 'clamp(280px, 30vw, 420px)',
+    width: 'clamp(320px, 36vw, 520px)',
     zIndex: 3,
     pointerEvents: 'none',
   } as const,
   columnHeader: {
     fontFamily: 'var(--font-display)',
-    fontSize: 'clamp(18px, 1.5vw, 24px)',
+    fontSize: 'clamp(20px, 1.85vw, 30px)',
     fontWeight: 600,
     color: 'var(--ali-ink)',
-    marginBottom: 22,
+    marginBottom: 24,
     lineHeight: 1.3,
     letterSpacing: '-0.01em',
   } as const,
@@ -233,7 +233,7 @@ const styles = {
   } as const,
   bullet: {
     fontFamily: 'var(--font-display)',
-    fontSize: 'clamp(15px, 1.3vw, 19px)',
+    fontSize: 'clamp(17px, 1.55vw, 22px)',
     fontWeight: 500,
     lineHeight: 1.5,
     color: 'var(--ali-ink)',
@@ -909,9 +909,7 @@ export default function AliBridge() {
                 }}
                 style={styles.bullet}
               >
-                <span style={styles.rightBulletArrow} aria-hidden="true">
-                  →
-                </span>
+                <span style={styles.bulletDot} aria-hidden="true" />
                 {item}
               </li>
             ))}
