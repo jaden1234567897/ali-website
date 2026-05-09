@@ -4,30 +4,38 @@ import { useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
 
 // Pinterest-style masonry: 3 columns on desktop → 2 on tablet → 1 on mobile.
-// Each image keeps its natural aspect ratio so columns flow with varied
-// heights, the way a real Pinterest board does.
-const IMAGES = [
-  '/1568825693603_LE_upscale_prime.jpg',
-  '/1577510049318.jpg',
-  '/1580212578575.jpg',
-  '/1582113313095.jpg',
-  '/1582113314409.jpg',
-  '/aboutme%202.jpg',
-  '/aboutme%203.jpg',
-  '/aboutme%204.jpg',
-  '/aboutme%205.jpg',
+// Each image's aspect ratio is hard-coded from its real natural dimensions
+// so the grid reserves the correct space *before* the file decodes — no
+// blank-grey placeholders, no layout shift while images stream in.
+type Photo = {
+  src: string
+  width: number
+  height: number
+  alt: string
+}
+
+const PHOTOS: Photo[] = [
+  { src: '/1568825693603_LE_upscale_prime.jpg', width: 1634, height: 1224, alt: 'Conference floor' },
+  { src: '/1577510049318.jpg', width: 1280, height: 960, alt: 'Workshop session' },
+  { src: '/1580212578575.jpg', width: 960, height: 1280, alt: 'Speaking on stage' },
+  { src: '/1582113313095.jpg', width: 800, height: 450, alt: 'Strategy briefing' },
+  { src: '/1582113314409.jpg', width: 1280, height: 960, alt: 'Boardroom discussion' },
+  { src: '/aboutme%202.jpg', width: 960, height: 1280, alt: 'Field portrait' },
+  { src: '/aboutme%203.jpg', width: 1536, height: 1152, alt: 'On the floor' },
+  { src: '/aboutme%204.jpg', width: 1536, height: 1152, alt: 'In the room' },
+  { src: '/aboutme%205.jpg', width: 1536, height: 1152, alt: 'In the field' },
 ]
 
 const COLUMN_COUNT = 3
 
-function distribute(images: string[], cols: number) {
-  const out: string[][] = Array.from({ length: cols }, () => [])
-  images.forEach((src, i) => out[i % cols].push(src))
+function distribute(photos: Photo[], cols: number) {
+  const out: Photo[][] = Array.from({ length: cols }, () => [])
+  photos.forEach((p, i) => out[i % cols].push(p))
   return out
 }
 
 export default function AliCurvedAI() {
-  const columns = distribute(IMAGES, COLUMN_COUNT)
+  const columns = distribute(PHOTOS, COLUMN_COUNT)
 
   return (
     <section
@@ -74,15 +82,22 @@ export default function AliCurvedAI() {
         </h2>
 
         <div className="ali-gallery-grid">
-          {columns.map((colImages, colIdx) => (
+          {columns.map((colPhotos, colIdx) => (
             <div key={colIdx} className="ali-gallery-col">
-              {colImages.map((src, i) => (
-                <GalleryImage
-                  key={src}
-                  src={src}
-                  alt={`Gallery image ${colIdx * 100 + i + 1}`}
-                />
-              ))}
+              {colPhotos.map((photo, i) => {
+                const flatIndex = colIdx + i * COLUMN_COUNT
+                return (
+                  <GalleryImage
+                    key={photo.src}
+                    photo={photo}
+                    // Top row of each column gets eager loading + high
+                    // priority so the gallery doesn't show blank cells
+                    // when first scrolled into view.
+                    priority={i === 0}
+                    delay={flatIndex * 0.04}
+                  />
+                )
+              })}
             </div>
           ))}
         </div>
@@ -118,7 +133,15 @@ export default function AliCurvedAI() {
   )
 }
 
-function GalleryImage({ src, alt }: { src: string; alt: string }) {
+function GalleryImage({
+  photo,
+  priority,
+  delay,
+}: {
+  photo: Photo
+  priority: boolean
+  delay: number
+}) {
   const ref = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { once: true, margin: '-50px' })
   const [loaded, setLoaded] = useState(false)
@@ -126,29 +149,36 @@ function GalleryImage({ src, alt }: { src: string; alt: string }) {
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 24 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
       style={{
         width: '100%',
+        // Reserve correct vertical space from the natural aspect ratio so
+        // there's no grey placeholder gap while the file streams in.
+        aspectRatio: `${photo.width} / ${photo.height}`,
         borderRadius: 12,
         overflow: 'hidden',
-        background: 'rgba(20, 20, 30, 0.05)',
-        border: '1px solid rgba(0, 0, 0, 0.06)',
+        background: '#ece6d8',
         boxShadow: '0 8px 24px -12px rgba(20, 20, 40, 0.18)',
       }}
     >
       <img
-        src={src}
-        alt={alt}
-        loading="lazy"
+        src={photo.src}
+        alt={photo.alt}
+        width={photo.width}
+        height={photo.height}
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        fetchPriority={priority ? 'high' : 'auto'}
         onLoad={() => setLoaded(true)}
         style={{
           width: '100%',
-          height: 'auto',
+          height: '100%',
           display: 'block',
+          objectFit: 'cover',
           opacity: loaded ? 1 : 0,
-          transition: 'opacity 800ms ease',
+          transition: 'opacity 500ms ease',
         }}
       />
     </motion.div>

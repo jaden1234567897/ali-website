@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
 type Book = {
@@ -86,34 +86,13 @@ const BOOKS: Book[] = [
 export default function AliCoreProducts() {
   const [openId, setOpenId] = useState<string | null>(null)
   const [isTouch, setIsTouch] = useState(false)
-  const isScrollingRef = useRef(false)
-  const scrollTimeoutRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     setIsTouch(window.matchMedia('(pointer: coarse)').matches)
   }, [])
 
-  // Suppress book open/close while scrolling so the cover's 850ms
-  // rotation isn't kicked off mid-scroll (the source of the residual lag
-  // when the cursor crossed between books while wheeling the page).
-  useEffect(() => {
-    const onScroll = () => {
-      isScrollingRef.current = true
-      setOpenId(prev => (prev === null ? prev : null))
-      if (scrollTimeoutRef.current) window.clearTimeout(scrollTimeoutRef.current)
-      scrollTimeoutRef.current = window.setTimeout(() => {
-        isScrollingRef.current = false
-      }, 180)
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      if (scrollTimeoutRef.current) window.clearTimeout(scrollTimeoutRef.current)
-    }
-  }, [])
-
   const handleEnter = (id: string) => {
-    if (!isTouch && !isScrollingRef.current) setOpenId(id)
+    if (!isTouch) setOpenId(id)
   }
   const handleLeave = () => {
     if (!isTouch) setOpenId(null)
