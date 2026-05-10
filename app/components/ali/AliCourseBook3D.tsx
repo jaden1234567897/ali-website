@@ -243,15 +243,16 @@ function renderModule(content: Extract<PageContent, { kind: 'module' }>) {
   ctx.moveTo(60, dividerY)
   ctx.lineTo(540, dividerY)
   ctx.stroke()
-  // Bullets — bigger
+  // Bullets — bigger, pure black, semibold for crisper rendering at the
+  // displayed size after PBR shading.
   let y = dividerY + 30
-  ctx.font = '500 24px "Helvetica Neue", Arial, sans-serif'
+  ctx.font = '600 24px "Helvetica Neue", Arial, sans-serif'
   content.bullets.forEach(bullet => {
     ctx.fillStyle = '#a47a25'
     ctx.beginPath()
     ctx.arc(70, y + 15, 5, 0, Math.PI * 2)
     ctx.fill()
-    ctx.fillStyle = '#1a1a1a'
+    ctx.fillStyle = '#000000'
     const bulletLines = wrapText(ctx, bullet, 450)
     bulletLines.forEach((line, j) => ctx.fillText(line, 92, y + j * 32))
     y += bulletLines.length * 32 + 22
@@ -342,11 +343,22 @@ export default function AliCourseBook3D() {
 
       // ── Texture builders ────────────────────────────────────────
       const loader = new THREE.TextureLoader()
+      // Each canvas is serialised to a PNG data URL and loaded as an
+      // HTMLImageElement before becoming a texture. This guarantees each
+      // page texture has its own independent, fully-materialised bitmap —
+      // previously, Three.js was mis-sampling when multiple in-memory
+      // canvases of the same size were uploaded back-to-back, which is
+      // why Module 04's content was overlapping with Module 01's.
       const makeCanvasTex = (canvas: HTMLCanvasElement) => {
-        const tex = new THREE.CanvasTexture(canvas)
+        const tex = new THREE.Texture()
         tex.colorSpace = THREE.SRGBColorSpace
         tex.anisotropy = 8
-        tex.needsUpdate = true
+        const img = new Image()
+        img.onload = () => {
+          tex.image = img
+          tex.needsUpdate = true
+        }
+        img.src = canvas.toDataURL('image/png')
         return tex
       }
 
