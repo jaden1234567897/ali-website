@@ -2904,17 +2904,15 @@ h1 span {
     linear-gradient(270deg, rgba(13, 13, 13, 0.06), transparent 6px),
     linear-gradient(135deg, var(--ali-white), #FAF7F1);
   opacity: 0;
-  /* Closing: fade out fast and early so the cover swings down onto a
-     blank page, not visible content showing through. */
-  transition: opacity 250ms ease 0ms;
+  /* Inside text now fades in synchronously with the cover swing (no
+     delay) so it materialises alongside the cover lifting away —
+     instead of appearing on a blank cream page after the rotation
+     finishes, which felt disjointed. */
+  transition: opacity 280ms ease 40ms;
 }
 
 .ali-book[data-open="true"] .ali-book-inside {
   opacity: 1;
-  /* Opening: start fading in once the cover is past ~halfway through its
-     swing (≈260 ms into the 550 ms rotation), finish around the time the
-     cover lands. */
-  transition: opacity 320ms ease 260ms;
 }
 
 .ali-book-inside-mark {

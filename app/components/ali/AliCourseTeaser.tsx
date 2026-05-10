@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import AliCourseBook3D from './AliCourseBook3D'
 
 const FEATURES = [
   '6 in-depth video modules',
@@ -88,46 +89,16 @@ export default function AliCourseTeaser() {
 
           <motion.div
             className="ali-course-visual"
-            initial={{ opacity: 0, scale: 0.92, rotateY: -10 }}
-            whileInView={{ opacity: 1, scale: 1, rotateY: 0 }}
+            initial={{ opacity: 0, scale: 0.92 }}
+            whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
           >
-            <CoursePreviewBook />
+            <AliCourseBook3D />
           </motion.div>
         </div>
       </div>
     </section>
-  )
-}
-
-function CoursePreviewBook() {
-  return (
-    <div
-      className="ali-book"
-      data-open={false}
-      style={{
-        ['--book-color-1' as string]: '#1a2a44',
-        ['--book-color-2' as string]: '#0a1628',
-        width: 'min(82%, 320px)',
-        cursor: 'default',
-      }}
-    >
-      <div className="ali-book-stage" style={{ transform: 'rotateY(-12deg)' }}>
-        <div className="ali-book-cover">
-          <div>
-            <div className="ali-book-mark">A Course By Ali</div>
-          </div>
-          <div className="ali-book-title">
-            From Strategy{'\n'}to Execution
-          </div>
-          <div className="ali-book-foot">
-            <span>6 Modules</span>
-            <span>2026</span>
-          </div>
-        </div>
-      </div>
-      <div className="ali-book-shadow" aria-hidden="true" />
-    </div>
   )
 }
