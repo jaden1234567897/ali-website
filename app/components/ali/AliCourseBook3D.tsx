@@ -160,39 +160,49 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
 }
 
 function renderModule(content: Extract<PageContent, { kind: 'module' }>) {
-  const canvas = makeCanvas(600, 800)
+  // Pre-darken the canvas content so that under any lighting the page
+  // texture reads with strong contrast. We do this by both deepening
+  // the text colours and slightly darkening the page background.
+  const SCALE = 2 // render at 2× for crisp text under PBR shading
+  const canvas = makeCanvas(600 * SCALE, 800 * SCALE)
   const ctx = canvas.getContext('2d')!
-  ctx.fillStyle = '#fbf7ed'
+  ctx.scale(SCALE, SCALE)
+  // Slightly warmer/darker cream so text doesn't ride white-on-white
+  // when the lights hit the page.
+  const bg = ctx.createLinearGradient(0, 0, 0, 800)
+  bg.addColorStop(0, '#f0e6cf')
+  bg.addColorStop(1, '#e6dab8')
+  ctx.fillStyle = bg
   ctx.fillRect(0, 0, 600, 800)
-  // Spine shadow
-  const sp = ctx.createLinearGradient(0, 0, 28, 0)
-  sp.addColorStop(0, 'rgba(13,13,13,0.10)')
+  // Spine shadow — heavier so the inner edge of the page is grounded
+  const sp = ctx.createLinearGradient(0, 0, 36, 0)
+  sp.addColorStop(0, 'rgba(13,13,13,0.22)')
   sp.addColorStop(1, 'rgba(0,0,0,0)')
   ctx.fillStyle = sp
-  ctx.fillRect(0, 0, 28, 800)
+  ctx.fillRect(0, 0, 36, 800)
   // Eyebrow
-  ctx.fillStyle = '#c4973a'
-  ctx.font = '700 14px "Helvetica Neue", Arial, sans-serif'
+  ctx.fillStyle = '#a47a25'
+  ctx.font = '700 15px "Helvetica Neue", Arial, sans-serif'
   ctx.textAlign = 'left'
   ctx.fillText(content.eyebrow, 60, 90)
-  // Title
-  ctx.fillStyle = '#1a1a1a'
-  ctx.font = '600 34px Georgia, serif'
+  // Title — true black for max contrast
+  ctx.fillStyle = '#0d0d0d'
+  ctx.font = '700 36px Georgia, serif'
   ctx.textBaseline = 'top'
   const titleLines = wrapText(ctx, content.title, 480)
-  titleLines.forEach((line, i) => ctx.fillText(line, 60, 120 + i * 42))
+  titleLines.forEach((line, i) => ctx.fillText(line, 60, 120 + i * 44))
   // Bullets
-  let y = 140 + titleLines.length * 42
-  ctx.font = '500 17px "Helvetica Neue", Arial, sans-serif'
+  let y = 140 + titleLines.length * 44
+  ctx.font = '500 18px "Helvetica Neue", Arial, sans-serif'
   content.bullets.forEach(bullet => {
-    ctx.fillStyle = '#c4973a'
+    ctx.fillStyle = '#a47a25'
     ctx.beginPath()
-    ctx.arc(70, y + 11, 4, 0, Math.PI * 2)
+    ctx.arc(70, y + 12, 4, 0, Math.PI * 2)
     ctx.fill()
-    ctx.fillStyle = '#3a3a3a'
+    ctx.fillStyle = '#1a1a1a'
     const bulletLines = wrapText(ctx, bullet, 460)
-    bulletLines.forEach((line, j) => ctx.fillText(line, 88, y + j * 24))
-    y += bulletLines.length * 24 + 16
+    bulletLines.forEach((line, j) => ctx.fillText(line, 88, y + j * 25))
+    y += bulletLines.length * 25 + 18
   })
   return canvas
 }
@@ -248,20 +258,26 @@ export default function AliCourseBook3D() {
       renderer.setSize(w0, h0)
       renderer.outputColorSpace = THREE.SRGBColorSpace
       renderer.toneMapping = THREE.ACESFilmicToneMapping
-      renderer.toneMappingExposure = 1.05
+      // Lower exposure so cream pages don't blow out when the book opens.
+      renderer.toneMappingExposure = 0.85
 
-      // Studio lighting
+      // Studio lighting — gentler than before. The earlier values were
+      // tuned for the closed dark cover; cream pages were getting hammered
+      // and the text/photos read washed-out when the book opened.
       const pmrem = new THREE.PMREMGenerator(renderer)
       scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
       pmrem.dispose()
-      scene.add(new THREE.AmbientLight(0xeae3d2, 0.5))
-      const key = new THREE.DirectionalLight(0xffffff, 2.2)
+      // Tone down the IBL contribution if the Three runtime supports it
+      // (r163+). Older versions silently ignore the assignment.
+      ;(scene as { environmentIntensity?: number }).environmentIntensity = 0.55
+      scene.add(new THREE.AmbientLight(0xeae3d2, 0.35))
+      const key = new THREE.DirectionalLight(0xffffff, 1.2)
       key.position.set(3, 4, 4)
       scene.add(key)
-      const rim = new THREE.DirectionalLight(0xfff2d8, 1.0)
+      const rim = new THREE.DirectionalLight(0xfff2d8, 0.5)
       rim.position.set(-3, 2, -2)
       scene.add(rim)
-      const top = new THREE.DirectionalLight(0xd8e2ee, 0.6)
+      const top = new THREE.DirectionalLight(0xd8e2ee, 0.35)
       top.position.set(0, 5, 1)
       scene.add(top)
 
@@ -396,15 +412,17 @@ export default function AliCourseBook3D() {
         const matLeft = new THREE.MeshStandardMaterial({ color: 0xe8dfc8, roughness: 0.65 })
         const matTop = new THREE.MeshStandardMaterial({ map: edgeTex, roughness: 0.7 })
         const matBottom = new THREE.MeshStandardMaterial({ map: edgeTex, roughness: 0.7 })
+        // Higher roughness + zero metalness = matte paper, no specular
+        // highlights blowing out the cream pages.
         const matFront = new THREE.MeshStandardMaterial({
           map: frontTex,
-          roughness: 0.55,
-          metalness: 0.04,
+          roughness: 0.9,
+          metalness: 0,
         })
         const matBack = new THREE.MeshStandardMaterial({
           map: backTex,
-          roughness: 0.55,
-          metalness: 0.04,
+          roughness: 0.9,
+          metalness: 0,
         })
         attachPhotoTarget(frontPage, matFront)
         attachPhotoTarget(backPage, matBack)
