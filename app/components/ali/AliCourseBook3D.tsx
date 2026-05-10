@@ -127,20 +127,66 @@ function renderCoverFront() {
 }
 
 function renderCoverBack() {
-  const canvas = makeCanvas(600, 800)
+  // Proper back cover at 2× resolution — author quote, course summary,
+  // CTA, gold border. Reads like a real magazine back cover.
+  const SCALE = 2
+  const canvas = makeCanvas(600 * SCALE, 800 * SCALE)
   const ctx = canvas.getContext('2d')!
+  ctx.scale(SCALE, SCALE)
   const grad = ctx.createLinearGradient(0, 0, 600, 800)
-  grad.addColorStop(0, '#1a1a1a')
-  grad.addColorStop(1, '#080808')
+  grad.addColorStop(0, '#1f1f1f')
+  grad.addColorStop(1, '#0a0a0a')
   ctx.fillStyle = grad
   ctx.fillRect(0, 0, 600, 800)
-  ctx.strokeStyle = 'rgba(196,151,58,0.25)'
-  ctx.lineWidth = 1
+  // Gold border
+  ctx.strokeStyle = 'rgba(196,151,58,0.35)'
+  ctx.lineWidth = 1.5
   ctx.strokeRect(40, 40, 520, 720)
-  ctx.fillStyle = 'rgba(255,255,255,0.35)'
-  ctx.font = '600 13px "Helvetica Neue", Arial, sans-serif'
+  // Eyebrow
+  ctx.fillStyle = '#c4973a'
+  ctx.font = '700 16px "Helvetica Neue", Arial, sans-serif'
   ctx.textAlign = 'center'
-  ctx.fillText('aliiweb.vercel.app', 300, 740)
+  ctx.fillText('A COURSE BY ALI', 300, 130)
+  // Pull-quote
+  ctx.fillStyle = 'rgba(255,255,255,0.92)'
+  ctx.font = '600 28px Georgia, serif'
+  ctx.textBaseline = 'top'
+  const quoteLines = [
+    '"Strategy fails',
+    'where execution',
+    'has no owner."',
+  ]
+  quoteLines.forEach((line, i) => ctx.fillText(line, 300, 200 + i * 38))
+  // Author tag
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'
+  ctx.font = '500 15px "Helvetica Neue", Arial, sans-serif'
+  ctx.fillText('— Ali Al-Ali', 300, 340)
+  // Divider
+  ctx.strokeStyle = 'rgba(196,151,58,0.4)'
+  ctx.beginPath()
+  ctx.moveTo(220, 400)
+  ctx.lineTo(380, 400)
+  ctx.stroke()
+  // What's inside
+  ctx.fillStyle = 'rgba(255,255,255,0.85)'
+  ctx.font = '600 14px "Helvetica Neue", Arial, sans-serif'
+  const inside = [
+    '6 video modules · frameworks',
+    'AI prompts · diagnostics',
+    'Lifetime access + updates',
+  ]
+  inside.forEach((line, i) => ctx.fillText(line, 300, 440 + i * 26))
+  // CTA box
+  ctx.strokeStyle = 'rgba(196,151,58,0.6)'
+  ctx.lineWidth = 1
+  ctx.strokeRect(180, 600, 240, 56)
+  ctx.fillStyle = '#c4973a'
+  ctx.font = '700 14px "Helvetica Neue", Arial, sans-serif'
+  ctx.fillText('JOIN THE WAITLIST →', 300, 632)
+  // URL
+  ctx.fillStyle = 'rgba(255,255,255,0.45)'
+  ctx.font = '600 12px "Helvetica Neue", Arial, sans-serif'
+  ctx.fillText('aliiweb.vercel.app', 300, 730)
   return canvas
 }
 
@@ -160,21 +206,19 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
 }
 
 function renderModule(content: Extract<PageContent, { kind: 'module' }>) {
-  // Pre-darken the canvas content so that under any lighting the page
-  // texture reads with strong contrast. We do this by both deepening
-  // the text colours and slightly darkening the page background.
-  const SCALE = 2 // render at 2× for crisp text under PBR shading
+  // 2× resolution + larger fonts so text actually reads at the displayed
+  // canvas size. Was rendering at fonts that became near-illegible once
+  // the BoxGeometry's mipmap chain kicked in at moderate render size.
+  const SCALE = 2
   const canvas = makeCanvas(600 * SCALE, 800 * SCALE)
   const ctx = canvas.getContext('2d')!
   ctx.scale(SCALE, SCALE)
-  // Slightly warmer/darker cream so text doesn't ride white-on-white
-  // when the lights hit the page.
   const bg = ctx.createLinearGradient(0, 0, 0, 800)
   bg.addColorStop(0, '#f0e6cf')
   bg.addColorStop(1, '#e6dab8')
   ctx.fillStyle = bg
   ctx.fillRect(0, 0, 600, 800)
-  // Spine shadow — heavier so the inner edge of the page is grounded
+  // Spine shadow
   const sp = ctx.createLinearGradient(0, 0, 36, 0)
   sp.addColorStop(0, 'rgba(13,13,13,0.22)')
   sp.addColorStop(1, 'rgba(0,0,0,0)')
@@ -182,28 +226,41 @@ function renderModule(content: Extract<PageContent, { kind: 'module' }>) {
   ctx.fillRect(0, 0, 36, 800)
   // Eyebrow
   ctx.fillStyle = '#a47a25'
-  ctx.font = '700 15px "Helvetica Neue", Arial, sans-serif'
+  ctx.font = '700 20px "Helvetica Neue", Arial, sans-serif'
   ctx.textAlign = 'left'
-  ctx.fillText(content.eyebrow, 60, 90)
-  // Title — true black for max contrast
+  ctx.fillText(content.eyebrow, 60, 110)
+  // Title
   ctx.fillStyle = '#0d0d0d'
-  ctx.font = '700 36px Georgia, serif'
+  ctx.font = '700 48px Georgia, serif'
   ctx.textBaseline = 'top'
   const titleLines = wrapText(ctx, content.title, 480)
-  titleLines.forEach((line, i) => ctx.fillText(line, 60, 120 + i * 44))
-  // Bullets
-  let y = 140 + titleLines.length * 44
-  ctx.font = '500 18px "Helvetica Neue", Arial, sans-serif'
+  titleLines.forEach((line, i) => ctx.fillText(line, 60, 150 + i * 56))
+  // Divider
+  ctx.strokeStyle = 'rgba(164, 122, 37, 0.35)'
+  ctx.lineWidth = 1
+  const dividerY = 180 + titleLines.length * 56
+  ctx.beginPath()
+  ctx.moveTo(60, dividerY)
+  ctx.lineTo(540, dividerY)
+  ctx.stroke()
+  // Bullets — bigger
+  let y = dividerY + 30
+  ctx.font = '500 24px "Helvetica Neue", Arial, sans-serif'
   content.bullets.forEach(bullet => {
     ctx.fillStyle = '#a47a25'
     ctx.beginPath()
-    ctx.arc(70, y + 12, 4, 0, Math.PI * 2)
+    ctx.arc(70, y + 15, 5, 0, Math.PI * 2)
     ctx.fill()
     ctx.fillStyle = '#1a1a1a'
-    const bulletLines = wrapText(ctx, bullet, 460)
-    bulletLines.forEach((line, j) => ctx.fillText(line, 88, y + j * 25))
-    y += bulletLines.length * 25 + 18
+    const bulletLines = wrapText(ctx, bullet, 450)
+    bulletLines.forEach((line, j) => ctx.fillText(line, 92, y + j * 32))
+    y += bulletLines.length * 32 + 22
   })
+  // Footer module mark in the corner
+  ctx.fillStyle = 'rgba(110, 80, 30, 0.4)'
+  ctx.font = '700 13px "Helvetica Neue", Arial, sans-serif'
+  ctx.textAlign = 'right'
+  ctx.fillText(content.eyebrow, 540, 740)
   return canvas
 }
 
@@ -224,6 +281,7 @@ export default function AliCourseBook3D() {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [hint, setHint] = useState(true)
+  const [indicator, setIndicator] = useState(0)
 
   useEffect(() => {
     let disposed = false
@@ -242,10 +300,11 @@ export default function AliCourseBook3D() {
       const h0 = container.clientHeight
 
       const scene = new THREE.Scene()
-      // Wider FOV + farther camera so both pages of the open spread fit in
-      // frame (the book grows from W wide closed to ~2W wide opened).
+      // Camera pulled closer so the spread fills the canvas — the previous
+      // 6.4 distance left ~30% of the canvas width as whitespace, which
+      // shrunk page text below readable size.
       const camera = new THREE.PerspectiveCamera(34, w0 / h0, 0.1, 50)
-      camera.position.set(0, 0, 6.4)
+      camera.position.set(0, 0, 4.6)
       camera.lookAt(0, 0, 0)
 
       const renderer = new THREE.WebGLRenderer({
@@ -478,22 +537,25 @@ export default function AliCourseBook3D() {
       scene.add(shadowMesh)
 
       // ── Interaction ─────────────────────────────────────────────
-      let currentSpread = 0 // 0 = closed, 1 = first spread shown, ... up to SHEET_COUNT
+      // Click anywhere advances; wraps back to closed at the end. Previous
+      // "left half = back, right half = forward" was confusing — users
+      // clicked the visible page (left after first flip) and went back
+      // every time, so they kept seeing Module 01 over and over and
+      // assumed every page was the same.
+      let currentSpread = 0
       const setSpread = (n: number) => {
-        currentSpread = Math.max(0, Math.min(SHEET_COUNT, n))
+        // Wrap: clicking past the last spread closes the book.
+        if (n > SHEET_COUNT) n = 0
+        if (n < 0) n = 0
+        currentSpread = n
         sheets.forEach((sheet, i) => {
           sheet.targetFlip = i < currentSpread ? 1 : 0
         })
         setHint(false)
+        setIndicator(currentSpread)
       }
 
-      const onClick = (e: MouseEvent) => {
-        const rect = canvasRef.current!.getBoundingClientRect()
-        const x = (e.clientX - rect.left) / rect.width
-        // Right half advances, left half goes back
-        if (x > 0.5) setSpread(currentSpread + 1)
-        else setSpread(currentSpread - 1)
-      }
+      const onClick = () => setSpread(currentSpread + 1)
       canvasRef.current.addEventListener('click', onClick)
 
       bookGroup.userData.hovered = false
@@ -635,26 +697,32 @@ export default function AliCourseBook3D() {
           display: 'block',
         }}
       />
-      {hint && (
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            bottom: 8,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontFamily: 'var(--font-display)',
-            fontSize: 11,
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-            color: 'var(--ali-muted, #888)',
-            pointerEvents: 'none',
-            opacity: 0.85,
-          }}
-        >
-          Click the book to turn pages
-        </div>
-      )}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          bottom: 8,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          fontFamily: 'var(--font-display)',
+          fontSize: 11,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: 'var(--ali-muted, #888)',
+          pointerEvents: 'none',
+          opacity: 0.85,
+          textAlign: 'center',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {hint
+          ? 'Click anywhere to turn the page'
+          : indicator === 0
+            ? 'Click to open · 5 spreads'
+            : indicator > SHEET_COUNT - 1
+              ? 'Back cover · click to restart'
+              : `Spread ${indicator} of ${SHEET_COUNT - 1}`}
+      </div>
     </div>
   )
 }
