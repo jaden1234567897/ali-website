@@ -232,8 +232,10 @@ export default function AliCourseBook3D() {
       const h0 = container.clientHeight
 
       const scene = new THREE.Scene()
-      const camera = new THREE.PerspectiveCamera(28, w0 / h0, 0.1, 50)
-      camera.position.set(0, 0, 6.0)
+      // Wider FOV + farther camera so both pages of the open spread fit in
+      // frame (the book grows from W wide closed to ~2W wide opened).
+      const camera = new THREE.PerspectiveCamera(34, w0 / h0, 0.1, 50)
+      camera.position.set(0, 0, 6.4)
       camera.lookAt(0, 0, 0)
 
       const renderer = new THREE.WebGLRenderer({
@@ -498,7 +500,7 @@ export default function AliCourseBook3D() {
 
       // ── Render loop ─────────────────────────────────────────────
       const clock = new THREE.Clock()
-      const eased = { rotY: 0.25, rotX: -0.05 }
+      const eased = { rotY: 0.25, rotX: -0.05, posX: 0 }
 
       const render = () => {
         frame = requestAnimationFrame(render)
@@ -520,6 +522,19 @@ export default function AliCourseBook3D() {
         bookGroup.rotation.y = eased.rotY
         bookGroup.rotation.x = eased.rotX
         bookGroup.position.y = Math.sin(t * 0.55) * 0.04
+
+        // Re-centre the book when it's open. Each sheet's spine sits at
+        // bookGroup-local x = -W/2; when a sheet flips, its outer edge
+        // swings out to bookGroup-local x = -3W/2 (W to the left of the
+        // spine). To keep the open spread centred in the canvas, slide
+        // the whole bookGroup right by W/2 as flipping progresses. Driven
+        // by the max currentFlip across sheets so the slide tracks the
+        // animation, not the discrete spread index.
+        let maxFlip = 0
+        for (const s of sheets) maxFlip = Math.max(maxFlip, s.currentFlip)
+        const targetPosX = (SHEET_WIDTH / 2) * maxFlip
+        eased.posX += (targetPosX - eased.posX) * 0.08
+        bookGroup.position.x = eased.posX
 
         // Per-sheet flip + per-bone fold
         sheets.forEach(sheet => {
