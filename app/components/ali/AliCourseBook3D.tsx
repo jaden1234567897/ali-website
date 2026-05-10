@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from 'react'
 const SHEET_WIDTH = 1.4
 const SHEET_HEIGHT = 1.9
 const SHEET_DEPTH = 0.006
+const SHEET_Z_GAP = 0.012 // visual gap between stacked sheets — wide enough that the stack reads as a real book block
 const BONE_COUNT = 6
 const SEGMENTS = 30
 const SHEET_COUNT = 5
@@ -243,10 +244,10 @@ function renderModule(content: Extract<PageContent, { kind: 'module' }>) {
   ctx.moveTo(60, dividerY)
   ctx.lineTo(540, dividerY)
   ctx.stroke()
-  // Bullets — bigger, pure black, semibold for crisper rendering at the
-  // displayed size after PBR shading.
+  // Bullets — pure black at 700 weight reads as confident black through
+  // the PBR shading. Was 600 weight, which read soft-grey on a phone.
   let y = dividerY + 30
-  ctx.font = '600 24px "Helvetica Neue", Arial, sans-serif'
+  ctx.font = '700 24px "Helvetica Neue", Arial, sans-serif'
   content.bullets.forEach(bullet => {
     ctx.fillStyle = '#a47a25'
     ctx.beginPath()
@@ -503,12 +504,12 @@ export default function AliCourseBook3D() {
         mesh.add(bones[0])
         mesh.bind(skeleton)
 
-        // Pivot — sits on the spine (book centre), rotates the whole sheet
-        // in addition to per-bone fold. Stack sheets along z so they don't
-        // z-fight when closed.
+        // Pivot — sits on the spine (book centre). Z-position is now
+        // computed per-frame in the render loop based on flip state, so
+        // each sheet ends up on the correct side of the spine stack.
         const pivot = new THREE.Group()
         pivot.position.x = -SHEET_WIDTH / 2 // spine on left of book
-        pivot.position.z = -sheetIndex * SHEET_DEPTH * 1.6
+        pivot.position.z = -sheetIndex * SHEET_Z_GAP // initial: right stack
         pivot.add(mesh)
         bookGroup.add(pivot)
 
@@ -628,25 +629,34 @@ export default function AliCourseBook3D() {
         eased.posX += (targetPosX - eased.posX) * 0.08
         bookGroup.position.x = eased.posX
 
-        // Per-sheet flip + per-bone fold
-        sheets.forEach(sheet => {
+        // Per-sheet flip + per-bone fold + dynamic z-stacking
+        sheets.forEach((sheet, sheetIdx) => {
           sheet.currentFlip += (sheet.targetFlip - sheet.currentFlip) * EASE_FLIP
-          // Whole-page pivot rotation
           sheet.pivot.rotation.y = -sheet.currentFlip * Math.PI
 
-          // Each bone gets a base "share" of the pivot rotation undone (so the
-          // rotation distributes across the chain) plus a curl that peaks
-          // mid-flip and returns to flat at start/end. Per-bone phase along
-          // the spine creates the wave.
+          // Z stacking — the missing piece that was making every spread
+          // show Module 01. When a sheet is mostly UNFLIPPED (currentFlip
+          // < 0.5) it lives on the RIGHT stack at z = -i * gap (so sheet
+          // 0 is closest to the camera and visible on top). When mostly
+          // FLIPPED, it lives on the LEFT stack at z = +i * gap (so the
+          // most recently flipped sheet is closest to the camera, with
+          // earlier-flipped sheets behind it). The transition happens
+          // when the page is rotated 90° edge-on (currentFlip = 0.5),
+          // so the snap is invisible — the rotated page is geometrically
+          // perpendicular to the camera at that moment.
+          const onLeftStack = sheet.currentFlip > 0.5
+          sheet.pivot.position.z = sheetIdx * SHEET_Z_GAP * (onLeftStack ? 1 : -1)
+
+          // Per-bone curl — peaks at mid-flip, returns to flat at the
+          // ends. Per-bone phase scaling propagates the wave from spine
+          // outward.
           for (let j = 0; j < sheet.bones.length; j++) {
-            const phase = j / (sheet.bones.length - 1) // 0 at spine, 1 at outer
-            // Curl: peaks at mid-flip, sin shape across the bones
+            const phase = j / (sheet.bones.length - 1)
             const flipShape = Math.sin(sheet.currentFlip * Math.PI)
             const boneShape = Math.sin(phase * Math.PI)
             const curl = MAX_CURL * flipShape * boneShape
-            const target = curl
             sheet.bones[j].rotation.y +=
-              (target - sheet.bones[j].rotation.y) * EASE_FOLD * (1 + j * 0.2)
+              (curl - sheet.bones[j].rotation.y) * EASE_FOLD * (1 + j * 0.2)
           }
         })
 
