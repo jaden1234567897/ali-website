@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
 type Book = {
@@ -83,42 +83,26 @@ const BOOKS: Book[] = [
   },
 ]
 
-// Hover-intent dwell time — the cursor must rest on a book this long before
-// it opens. Stops the cover from animating mid-scroll when the cursor just
-// happens to pass over a book as the section enters the viewport.
-const HOVER_INTENT_MS = 220
-
 export default function AliCoreProducts() {
   const [openId, setOpenId] = useState<string | null>(null)
   const [isTouch, setIsTouch] = useState(false)
-  const dwellTimerRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     setIsTouch(window.matchMedia('(pointer: coarse)').matches)
-    return () => {
-      if (dwellTimerRef.current) window.clearTimeout(dwellTimerRef.current)
-    }
   }, [])
 
-  // Stable handler refs so memoised BookEls don't re-render on parent state
-  // changes — only the book whose `open` prop actually flips will update.
+  // Instant open on hover — the GPU optimisations on .ali-book make the
+  // cover rotation cheap enough that there's no need to delay it. Stable
+  // handler refs so memoised BookEls only re-render when their own `open`
+  // flag actually flips.
   const handleEnter = useCallback(
     (id: string) => {
-      if (isTouch) return
-      if (dwellTimerRef.current) window.clearTimeout(dwellTimerRef.current)
-      dwellTimerRef.current = window.setTimeout(() => {
-        setOpenId(id)
-      }, HOVER_INTENT_MS)
+      if (!isTouch) setOpenId(id)
     },
     [isTouch],
   )
   const handleLeave = useCallback(() => {
-    if (isTouch) return
-    if (dwellTimerRef.current) {
-      window.clearTimeout(dwellTimerRef.current)
-      dwellTimerRef.current = undefined
-    }
-    setOpenId(null)
+    if (!isTouch) setOpenId(null)
   }, [isTouch])
   const handleTap = useCallback(
     (id: string) => {
