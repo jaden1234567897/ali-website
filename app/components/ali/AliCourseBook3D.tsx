@@ -613,11 +613,14 @@ export default function AliCourseBook3D() {
   return (
     <div
       ref={containerRef}
+      className="ali-course-book-3d"
       style={{
         position: 'relative',
         width: '100%',
-        aspectRatio: '4 / 5',
-        maxWidth: 480,
+        // Aspect ratio favours width because the open spread is ~2× as wide
+        // as the closed cover. 5/4 gives us enough horizontal room for the
+        // open spread without the closed cover looking squashed vertically.
+        aspectRatio: '5 / 4',
       }}
     >
       <canvas

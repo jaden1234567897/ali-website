@@ -3835,7 +3835,10 @@ h1 span {
 
 .ali-course-visual {
   position: relative;
-  aspect-ratio: 1 / 1;
+  /* Wider aspect ratio so the open book spread fills the canvas — the
+     spread is ~2× as wide as the closed cover, so a square frame wasted
+     vertical space and shrunk the readable text. */
+  aspect-ratio: 5 / 4;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3844,7 +3847,10 @@ h1 span {
 
 @media (max-width: 880px) {
   .ali-course-inner { grid-template-columns: 1fr; }
-  .ali-course-visual { max-width: 360px; margin: 0 auto; }
+  /* Larger mobile size so the page text inside the 3D book stays readable
+     when the book opens to a spread. Was 360px which made interior text
+     near-illegible on a phone. */
+  .ali-course-visual { max-width: 100%; width: 100%; margin: 0 auto; }
 }
 
 /* â”€â”€â”€ Booking CTA â”€â”€â”€ */
