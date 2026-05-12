@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 
 // Pinterest-style masonry. Images display inline at their natural aspect
@@ -148,8 +148,12 @@ function GalleryImage({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { once: true, margin: '-50px' })
-  const [loaded, setLoaded] = useState(false)
 
+  // The image is ALWAYS rendered at full opacity. The shimmer-gradient
+  // wrapper sits behind it and is visually covered the moment the image
+  // decodes — no JS state, no onLoad-gated opacity trick (which left the
+  // image invisible forever if the load event never fired, e.g. on cached
+  // hits in some browsers).
   return (
     <motion.div
       ref={ref}
@@ -164,7 +168,7 @@ function GalleryImage({
         background:
           'linear-gradient(120deg, rgba(20,20,30,0.05) 0%, rgba(20,20,30,0.10) 50%, rgba(20,20,30,0.05) 100%)',
         backgroundSize: '200% 100%',
-        animation: loaded ? 'none' : 'ali-gallery-shimmer 1.6s ease-in-out infinite',
+        animation: 'ali-gallery-shimmer 1.6s ease-in-out infinite',
         boxShadow: '0 8px 24px -12px rgba(20, 20, 40, 0.18)',
       }}
     >
@@ -173,17 +177,16 @@ function GalleryImage({
         alt={photo.alt}
         width={photo.width}
         height={photo.height}
-        loading="eager"
+        // Native lazy loading — the browser starts the fetch only when the
+        // image is close to entering the viewport, so the 1.4 MB total
+        // payload doesn't blast the network on initial page load.
+        loading={priority ? 'eager' : 'lazy'}
         decoding="async"
-        fetchPriority={priority ? 'high' : 'auto'}
-        onLoad={() => setLoaded(true)}
         style={{
           width: '100%',
           height: '100%',
           display: 'block',
           objectFit: 'cover',
-          opacity: loaded ? 1 : 0,
-          transition: 'opacity 500ms ease',
         }}
       />
     </motion.div>

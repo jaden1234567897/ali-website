@@ -12,7 +12,9 @@ import AliBridge from './components/ali/AliBridge'
 import AliCurvedAI from './components/ali/AliCurvedAI'
 import AliServices from './components/ali/AliServices'
 import AliProcess from './components/ali/AliProcess'
-import AliTestimonials from './components/ali/AliTestimonials'
+// Branch-2 swap: AliTestimonials → AliFlowTestimonials (infinite marquee
+// in two rows moving in opposite directions, replacing the static 3-card grid)
+import AliFlowTestimonials from './components/ali/AliFlowTestimonials'
 import AliBooking from './components/ali/AliBooking'
 import AliCinematicFooter from './components/ali/AliCinematicFooter'
 import AliWhatsAppFloat from './components/ali/AliWhatsAppFloat'
@@ -68,7 +70,7 @@ export default function Home() {
 
         <AliServices />
         <AliProcess />
-        <AliTestimonials />
+        <AliFlowTestimonials />
 
         {/* Branch-2: Four engagement options (Advisory / Materials / 1:1 / Course)
             placed right before the booking CTA — credibility above, decisive
