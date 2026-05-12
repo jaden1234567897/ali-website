@@ -4,12 +4,10 @@ import AliNav from './components/ali/AliNav'
 import AliNovaTransition from './components/ali/AliNovaTransition'
 import AliAbout from './components/ali/AliAbout'
 // Branch-2 swap: AliCoreProducts + AliCourseTeaser → single AliTierCards
-// section (pricing-table style, 4 columns: Advisory / Materials / 1:1 / Course)
+// section (pricing-table style, 4 columns: Advisory / Materials / 1:1 / Course).
+// Positioned right before AliBooking so the four engagement options sit
+// next to the "book a call" CTA as the closing conversion block.
 import AliTierCards from './components/ali/AliTierCards'
-// Branch-2 add: narrative "Bridge the Strategy to Execution Gap" section
-// with two coins + a scroll-built suspension bridge between them. Sits
-// before the existing AliBridge triangle.
-import AliBridgeBuild from './components/ali/AliBridgeBuild'
 import AliBridge from './components/ali/AliBridge'
 import AliCurvedAI from './components/ali/AliCurvedAI'
 import AliServices from './components/ali/AliServices'
@@ -62,13 +60,6 @@ export default function Home() {
         {/* About Ali — cinematic pinned reveal (replaces the Bridging the Gap timeline) */}
         <AliAbout />
 
-        {/* Branch-2: Tier cards (replaces both Core Products + Course Teaser) */}
-        <AliTierCards />
-
-        {/* Branch-2: Narrative "Bridge the Strategy to Execution Gap" — two coins
-            + a scroll-built suspension bridge with AI pulse running across it. */}
-        <AliBridgeBuild />
-
         {/* Bridge — pinned scroll: text reveal + 3 coins forming a bridge with AI as keystone */}
         <AliBridge />
 
@@ -78,6 +69,12 @@ export default function Home() {
         <AliServices />
         <AliProcess />
         <AliTestimonials />
+
+        {/* Branch-2: Four engagement options (Advisory / Materials / 1:1 / Course)
+            placed right before the booking CTA — credibility above, decisive
+            offers + call-to-action below. */}
+        <AliTierCards />
+
         <AliBooking />
       </main>
 
