@@ -6,6 +6,10 @@ import AliAbout from './components/ali/AliAbout'
 // Branch-2 swap: AliCoreProducts + AliCourseTeaser → single AliTierCards
 // section (pricing-table style, 4 columns: Advisory / Materials / 1:1 / Course)
 import AliTierCards from './components/ali/AliTierCards'
+// Branch-2 add: narrative "Bridge the Strategy to Execution Gap" section
+// with two coins + a scroll-built suspension bridge between them. Sits
+// before the existing AliBridge triangle.
+import AliBridgeBuild from './components/ali/AliBridgeBuild'
 import AliBridge from './components/ali/AliBridge'
 import AliCurvedAI from './components/ali/AliCurvedAI'
 import AliServices from './components/ali/AliServices'
@@ -60,6 +64,10 @@ export default function Home() {
 
         {/* Branch-2: Tier cards (replaces both Core Products + Course Teaser) */}
         <AliTierCards />
+
+        {/* Branch-2: Narrative "Bridge the Strategy to Execution Gap" — two coins
+            + a scroll-built suspension bridge with AI pulse running across it. */}
+        <AliBridgeBuild />
 
         {/* Bridge — pinned scroll: text reveal + 3 coins forming a bridge with AI as keystone */}
         <AliBridge />

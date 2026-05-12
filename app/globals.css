@@ -5224,3 +5224,102 @@ h1 span {
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* ─── Bridge Build (branch-2 — narrative section, coins + scroll-built suspension bridge) ─── */
+.ali-bridge-build {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--ali-cream);
+  padding: clamp(80px, 9vw, 140px) clamp(20px, 5vw, 60px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ali-bridge-build-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ali-bridge-build-text-top {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  max-width: 820px;
+  margin: 0 auto 36px;
+}
+
+.ali-bridge-build-text-top h2 em {
+  color: var(--ali-gold);
+  font-style: italic;
+}
+
+.ali-bridge-build-deck {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2vw, 28px);
+  font-weight: 500;
+  font-style: italic;
+  color: var(--ali-ink);
+  margin-top: 12px;
+}
+
+.ali-bridge-build-svg {
+  position: relative;
+  z-index: 2;
+  width: min(900px, 90vw);
+  height: clamp(280px, 36vh, 460px);
+  margin: 0 auto;
+}
+
+.ali-bridge-build-svg .hanger {
+  /* Hangers animate via stroke-dashoffset; lock down their visual style */
+}
+
+.ali-bridge-build-text-bottom {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  max-width: 760px;
+  margin: 32px auto 0;
+}
+
+.ali-bridge-build-text-bottom p {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 1.8vw, 26px);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ali-ink);
+  letter-spacing: -0.01em;
+}
+
+.ali-bridge-build-text-bottom em {
+  color: var(--ali-gold);
+  font-style: italic;
+  font-weight: 600;
+}
+
+.ali-bridge-build-text-bottom strong {
+  color: var(--ali-ink);
+  font-weight: 700;
+}
+
+/* Mobile layout — coins stack vertically (Strategy top, Execution bottom),
+   bridge SVG rotates 90° to become vertical. */
+@media (max-width: 768px) {
+  .ali-bridge-build {
+    min-height: 110vh;
+  }
+  .ali-bridge-build-svg {
+    width: clamp(180px, 50vw, 280px);
+    height: clamp(420px, 50vh, 560px);
+    /* Rotate the SVG so the bridge runs top-to-bottom between the
+       vertically-stacked coins. */
+    transform: rotate(90deg);
+  }
+}
