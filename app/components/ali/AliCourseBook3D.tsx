@@ -46,7 +46,7 @@ const PAGES: PageContent[] = [
       'Strategy prompts you can run weekly',
     ],
   },
-  { kind: 'photo', src: '/aboutme%202.webp' },
+  { kind: 'photo', src: '/aboutme-2.webp' },
   {
     kind: 'module',
     eyebrow: 'MODULE 02',
@@ -57,7 +57,7 @@ const PAGES: PageContent[] = [
       'Operating-model design under pressure',
     ],
   },
-  { kind: 'photo', src: '/aboutme%203.webp' },
+  { kind: 'photo', src: '/aboutme-3.webp' },
   {
     kind: 'module',
     eyebrow: 'MODULE 03',
@@ -68,7 +68,7 @@ const PAGES: PageContent[] = [
       'Prompts that survive board scrutiny',
     ],
   },
-  { kind: 'photo', src: '/aboutme%204.webp' },
+  { kind: 'photo', src: '/aboutme-4.webp' },
   {
     kind: 'module',
     eyebrow: 'MODULE 04',
@@ -79,7 +79,7 @@ const PAGES: PageContent[] = [
       'Systems that depend on institutions, not heroes',
     ],
   },
-  { kind: 'photo', src: '/aboutme%205.webp' },
+  { kind: 'photo', src: '/aboutme-5.webp' },
   { kind: 'cover-back' },
 ]
 
