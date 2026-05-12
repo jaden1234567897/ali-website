@@ -4965,3 +4965,262 @@ h1 span {
   .ali-tl-card { max-width: 100%; }
 }
 
+/* ─── Tier Cards (branch-2 — pricing-style replacement for Core Products + Course) ─── */
+.ali-tiers {
+  background: var(--ali-cream);
+  padding: clamp(80px, 9vw, 140px) clamp(20px, 5vw, 96px);
+}
+
+.ali-tiers-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  max-width: 1280px;
+  margin: 0 auto;
+  align-items: stretch;
+}
+
+@media (max-width: 1120px) {
+  .ali-tiers-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 720px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ali-tiers-grid {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+  }
+}
+
+.ali-tier {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  padding: 28px 24px 24px;
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 360ms ease,
+    border-color 360ms ease;
+  text-align: left;
+  min-height: 100%;
+}
+
+.ali-tier--light {
+  background: #ffffff;
+  border: 1px solid var(--ali-line);
+  color: var(--ali-ink);
+  box-shadow: 0 1px 0 rgba(20, 20, 30, 0.02);
+}
+
+.ali-tier--dark {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05), transparent 14px),
+    linear-gradient(135deg, #1f1f1f, #0a0a0a);
+  border: 1px solid rgba(196, 151, 58, 0.25);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 40px -20px rgba(13, 13, 13, 0.4);
+}
+
+.ali-tier--highlight {
+  border: 1.5px solid var(--ali-gold);
+  box-shadow:
+    0 0 0 4px rgba(196, 151, 58, 0.08),
+    0 18px 40px -22px rgba(196, 151, 58, 0.35);
+  transform: translateY(-6px);
+}
+
+.ali-tier:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 50px -22px rgba(13, 13, 13, 0.25);
+}
+
+.ali-tier--highlight:hover {
+  transform: translateY(-10px);
+}
+
+.ali-tier-pin {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  background: var(--ali-gold);
+  color: #1a1a1a;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ali-tier-head { margin-bottom: 22px; }
+
+.ali-tier-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  margin-bottom: 14px;
+}
+
+.ali-tier-eyebrow--neutral { color: var(--ali-quiet); }
+.ali-tier-eyebrow--gold,
+.ali-tier-eyebrow--dot {
+  color: var(--ali-gold);
+}
+
+.ali-tier--dark .ali-tier-eyebrow--neutral { color: rgba(255, 255, 255, 0.55); }
+
+.ali-tier-title {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 1.8vw, 26px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 0 0 10px;
+  color: inherit;
+}
+
+.ali-tier-tagline {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ali-muted);
+  margin: 0;
+}
+
+.ali-tier--dark .ali-tier-tagline { color: rgba(255, 255, 255, 0.65); }
+
+.ali-tier-features {
+  list-style: none;
+  margin: 0 0 26px;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--ali-line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.ali-tier--dark .ali-tier-features {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+.ali-tier-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: inherit;
+}
+
+.ali-tier-check {
+  color: var(--ali-gold);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.ali-tier-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: auto;
+}
+
+.ali-tier-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.ali-tier-tag--neutral { color: var(--ali-quiet); }
+.ali-tier-tag--gold { color: var(--ali-gold); }
+.ali-tier-tag--dot { color: var(--ali-gold); }
+.ali-tier--dark .ali-tier-tag--neutral { color: rgba(255, 255, 255, 0.5); }
+
+.ali-tier-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: var(--ali-ink);
+  color: var(--ali-cream);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: background 240ms ease, transform 240ms ease;
+}
+
+.ali-tier-cta:hover {
+  background: #000;
+  transform: translateX(2px);
+}
+
+.ali-tier--dark .ali-tier-cta {
+  background: var(--ali-gold);
+  color: #1a1a1a;
+}
+
+.ali-tier--dark .ali-tier-cta:hover {
+  background: #d8a94a;
+}
+
+.ali-tier-email {
+  display: flex;
+  gap: 6px;
+}
+
+.ali-tier-email input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 200ms ease, background 200ms ease;
+}
+
+.ali-tier-email input::placeholder { color: rgba(255, 255, 255, 0.4); }
+
+.ali-tier-email input:focus {
+  border-color: rgba(196, 151, 58, 0.6);
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.ali-tier-email button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: none;
+  background: var(--ali-gold);
+  color: #1a1a1a;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 200ms ease;
+}
+
+.ali-tier-email button:hover { background: #d8a94a; }
+
+.ali-tier-submitted {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(196, 151, 58, 0.12);
+  border: 1px solid rgba(196, 151, 58, 0.35);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  line-height: 1.5;
+}

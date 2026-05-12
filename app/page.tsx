@@ -3,13 +3,14 @@ import CoinField from './components/CoinField'
 import AliNav from './components/ali/AliNav'
 import AliNovaTransition from './components/ali/AliNovaTransition'
 import AliAbout from './components/ali/AliAbout'
-import AliCoreProducts from './components/ali/AliCoreProducts'
+// Branch-2 swap: AliCoreProducts + AliCourseTeaser → single AliTierCards
+// section (pricing-table style, 4 columns: Advisory / Materials / 1:1 / Course)
+import AliTierCards from './components/ali/AliTierCards'
 import AliBridge from './components/ali/AliBridge'
 import AliCurvedAI from './components/ali/AliCurvedAI'
 import AliServices from './components/ali/AliServices'
 import AliProcess from './components/ali/AliProcess'
 import AliTestimonials from './components/ali/AliTestimonials'
-import AliCourseTeaser from './components/ali/AliCourseTeaser'
 import AliBooking from './components/ali/AliBooking'
 import AliCinematicFooter from './components/ali/AliCinematicFooter'
 import AliWhatsAppFloat from './components/ali/AliWhatsAppFloat'
@@ -57,8 +58,8 @@ export default function Home() {
         {/* About Ali — cinematic pinned reveal (replaces the Bridging the Gap timeline) */}
         <AliAbout />
 
-        {/* Core products — 3D books that open on hover */}
-        <AliCoreProducts />
+        {/* Branch-2: Tier cards (replaces both Core Products + Course Teaser) */}
+        <AliTierCards />
 
         {/* Bridge — pinned scroll: text reveal + 3 coins forming a bridge with AI as keystone */}
         <AliBridge />
@@ -69,7 +70,6 @@ export default function Home() {
         <AliServices />
         <AliProcess />
         <AliTestimonials />
-        <AliCourseTeaser />
         <AliBooking />
       </main>
 
