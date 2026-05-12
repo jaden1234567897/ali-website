@@ -1,23 +1,22 @@
 'use client'
 
-// Narrative reveal section — 5-phase scroll-driven story that introduces
-// the 3 coins (Strategy, Execution, AI) one by one alongside the text
-// that names them.
+// Premium Scroll Timeline — narrative reveal of the strategy→execution gap
+// story, modelled on the Framer Premium Timeline component.
 //
-// Phase 1: "Most organizations have STRATEGY TEAMS"     → Strategy coin scales in (centre)
-// Phase 2: "and delivery units. No one owns…"           → Strategy slides to its side
-// Phase 3: "We are here to Bridge the Strategy to       → Execution coin appears
-//          EXECUTION GAP"                                  on the opposite side
-// Phase 4: "with the help of ARTIFICIAL INTELLIGENCE"   → AI coin rises into the middle
-// Phase 5: "to make that space sharper."                → AI connection lines + pulse
-//                                                          particles activate
+// Section is tall (~220vh) with natural scroll (no pin). A white vector line
+// snakes vertically through the section, drawing as the user scrolls. Cards
+// reveal one by one as they enter the viewport — text and coins both. Once
+// revealed, nothing fades out. Strategy and Execution coins sit on opposite
+// sides of the section; AI coin appears at the bottom alongside the closing
+// statement.
 //
-// Section is pinned for ~4000 px of scroll. Three.js scene with 3 silver
-// coins is the constant backdrop; text overlay reveals in stages; an SVG
-// overlay draws the AI connection curves and runs travelling-pulse particles
-// along them once everything's revealed.
+// Coins are individual small Three.js scenes (one per card) — keeps the
+// layout DOM-driven, simplifies positioning, and avoids the
+// canvas-spanning-the-whole-section pattern that made the previous version
+// drift behind text.
 
 import { useEffect, useRef } from 'react'
+import { motion, useInView } from 'framer-motion'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -25,109 +24,17 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
 }
 
-declare global {
-  interface Window {
-    __aliBridgeBuildProgress?: number
-  }
-}
-
-const SECTION_PIN_DISTANCE = 4000
-
-function clamp(v: number, min = 0, max = 1) {
-  return Math.min(max, Math.max(min, v))
-}
-
-function smoothstep(edge0: number, edge1: number, value: number) {
-  const x = clamp((value - edge0) / (edge1 - edge0))
-  return x * x * (3 - 2 * x)
-}
-
-function mix(a: number, b: number, t: number) {
-  return a + (b - a) * t
-}
-
-export default function AliBridgeBuild() {
-  const sectionRef = useRef<HTMLElement>(null)
+// ── Single 3D coin component ────────────────────────────────────
+function SingleCoin({ label }: { label: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const svgRef = useRef<SVGSVGElement>(null)
+  const isInView = useInView(containerRef, { once: false, margin: '-50px' })
 
-  // Text refs — each phase has its own div that we animate independently
-  const phase1Ref = useRef<HTMLDivElement>(null)
-  const phase2Ref = useRef<HTMLDivElement>(null)
-  const phase3Ref = useRef<HTMLDivElement>(null)
-  const phase4Ref = useRef<HTMLDivElement>(null)
-  const phase5Ref = useRef<HTMLDivElement>(null)
-
-  // ── ScrollTrigger: pinned timeline driving text reveals + global progress
-  useEffect(() => {
-    const section = sectionRef.current
-    if (!section || typeof window === 'undefined') return
-
-    window.__aliBridgeBuildProgress = 0
-
-    const ctx = gsap.context(() => {
-      // Initial — all text hidden
-      const allPhases = [
-        phase1Ref.current,
-        phase2Ref.current,
-        phase3Ref.current,
-        phase4Ref.current,
-        phase5Ref.current,
-      ]
-      gsap.set(allPhases, { opacity: 0, y: 26, filter: 'blur(8px)' })
-
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: 'top top',
-          end: `+=${SECTION_PIN_DISTANCE}`,
-          pin: true,
-          scrub: 0.5,
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
-          onUpdate(self) {
-            window.__aliBridgeBuildProgress = self.progress
-          },
-          onLeave() {
-            window.__aliBridgeBuildProgress = 1
-          },
-          onLeaveBack() {
-            window.__aliBridgeBuildProgress = 0
-          },
-        },
-      })
-
-      // Phase 1 — Most organizations have STRATEGY TEAMS
-      tl.to(phase1Ref.current, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.05 }, 0.05)
-      tl.to(phase1Ref.current, { opacity: 0, filter: 'blur(4px)', duration: 0.04 }, 0.27)
-
-      // Phase 2 — and delivery units. No one owns what's in between.
-      tl.to(phase2Ref.current, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.05 }, 0.25)
-      tl.to(phase2Ref.current, { opacity: 0, filter: 'blur(4px)', duration: 0.04 }, 0.45)
-
-      // Phase 3 — We are here to Bridge the Strategy to EXECUTION GAP
-      tl.to(phase3Ref.current, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.05 }, 0.45)
-      tl.to(phase3Ref.current, { opacity: 0, filter: 'blur(4px)', duration: 0.04 }, 0.65)
-
-      // Phase 4 — with the help of ARTIFICIAL INTELLIGENCE
-      tl.to(phase4Ref.current, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.05 }, 0.65)
-      tl.to(phase4Ref.current, { opacity: 0, filter: 'blur(4px)', duration: 0.04 }, 0.85)
-
-      // Phase 5 — to make that space sharper.
-      tl.to(phase5Ref.current, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.05 }, 0.83)
-    }, section)
-
-    return () => {
-      ctx.revert()
-      window.__aliBridgeBuildProgress = 0
-    }
-  }, [])
-
-  // ── Three.js: 3 coins choreographed by scroll progress
   useEffect(() => {
     let disposed = false
     let frame = 0
     let cleanup = () => {}
+    let visible = false
 
     async function boot() {
       const THREE = await import('three')
@@ -135,17 +42,12 @@ export default function AliBridgeBuild() {
       const { RoomEnvironment } = await import(
         'three/examples/jsm/environments/RoomEnvironment.js'
       )
-      if (disposed || !canvasRef.current || !sectionRef.current) return
+      if (disposed || !canvasRef.current || !containerRef.current) return
 
-      const container = sectionRef.current
+      const container = containerRef.current
       const scene = new THREE.Scene()
-      const camera = new THREE.PerspectiveCamera(
-        34,
-        container.clientWidth / container.clientHeight,
-        0.1,
-        80,
-      )
-      camera.position.set(0, 0, 9)
+      const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 50)
+      camera.position.set(0, 0, 4.5)
       camera.lookAt(0, 0, 0)
 
       const renderer = new THREE.WebGLRenderer({
@@ -155,7 +57,13 @@ export default function AliBridgeBuild() {
         powerPreference: 'high-performance',
       })
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75))
-      renderer.setSize(container.clientWidth, container.clientHeight)
+      const resize = () => {
+        const s = Math.min(container.clientWidth, container.clientHeight)
+        renderer.setSize(s, s)
+        camera.aspect = 1
+        camera.updateProjectionMatrix()
+      }
+      resize()
       renderer.outputColorSpace = THREE.SRGBColorSpace
       renderer.toneMapping = THREE.ACESFilmicToneMapping
       renderer.toneMappingExposure = 1.08
@@ -164,7 +72,8 @@ export default function AliBridgeBuild() {
       scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
       pmrem.dispose()
 
-      // Same lighting as hero coins so all coins on the site read identical
+      // Same lighting recipe used by the hero coins so all coins on the
+      // site read as the same physical material.
       scene.add(new THREE.AmbientLight(0xe8f0f8, 0.55))
       const key = new THREE.DirectionalLight(0xffffff, 5.5)
       key.position.set(4, 5.5, 6)
@@ -176,32 +85,10 @@ export default function AliBridgeBuild() {
       warm.position.set(6, 3, 3)
       scene.add(warm)
 
-      type Coin = {
-        outer: import('three').Group
-        materials: import('three').Material[]
-        labelMat: import('three').Material | null
-      }
-      const coins: Coin[] = []
-      const labels = ['STRATEGY', 'EXECUTION', 'AI']
-
-      const makeLabelTex = (label: string) => {
-        const canvas = document.createElement('canvas')
-        canvas.width = 1024
-        canvas.height = 256
-        const ctx = canvas.getContext('2d')
-        if (ctx) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
-          ctx.fillStyle = '#202328'
-          ctx.font = '700 125px Arial, sans-serif'
-          ctx.textAlign = 'center'
-          ctx.textBaseline = 'middle'
-          ctx.fillText(label, canvas.width / 2, canvas.height / 2 + 4)
-        }
-        const tex = new THREE.CanvasTexture(canvas)
-        tex.colorSpace = THREE.SRGBColorSpace
-        tex.anisotropy = 8
-        return tex
-      }
+      const outer = new THREE.Group()
+      scene.add(outer)
+      outer.scale.setScalar(0)
+      let entryT = 0 // 0→1 once visible
 
       new GLTFLoader().load('/silver_coin.glb', gltf => {
         if (disposed) return
@@ -213,158 +100,81 @@ export default function AliBridgeBuild() {
         const coinDepth = 0.35
         const faceZ = (size.z / maxAxis) * 0.71 * coinDepth + 0.012
 
-        labels.forEach(label => {
-          const outer = new THREE.Group()
-          const model = proto.clone(true)
-          model.traverse(obj => {
-            const mesh = obj as import('three').Mesh
-            if (mesh.isMesh && mesh.material) {
-              if (Array.isArray(mesh.material)) {
-                mesh.material = mesh.material.map(m => m.clone())
-              } else {
-                mesh.material = mesh.material.clone()
-              }
+        const model = proto.clone(true)
+        model.traverse(obj => {
+          const mesh = obj as import('three').Mesh
+          if (mesh.isMesh && mesh.material) {
+            if (Array.isArray(mesh.material)) {
+              mesh.material = mesh.material.map(m => m.clone())
+            } else {
+              mesh.material = mesh.material.clone()
             }
-          })
-          const labelMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(0.92, 0.22),
-            new THREE.MeshBasicMaterial({
-              map: makeLabelTex(label),
-              transparent: true,
-              depthWrite: false,
-              side: THREE.DoubleSide,
-            }),
-          )
-          model.position.sub(center)
-          const ns = 1.42 / maxAxis
-          model.scale.set(ns, ns, ns * coinDepth)
-          labelMesh.position.z = faceZ
-
-          const materials: import('three').Material[] = []
-          model.traverse(obj => {
-            const mesh = obj as import('three').Mesh
-            if (mesh.isMesh && mesh.material) {
-              const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-              list.forEach(m => {
-                m.transparent = true
-                materials.push(m)
-              })
-            }
-          })
-
-          outer.add(model)
-          outer.add(labelMesh)
-          // Start invisible — choreography fades each one in at its phase
-          outer.scale.setScalar(0)
-          materials.forEach(m => (m.opacity = 0))
-          ;(labelMesh.material as import('three').Material).opacity = 0
-          scene.add(outer)
-          coins.push({
-            outer,
-            materials,
-            labelMat: labelMesh.material as import('three').Material,
-          })
+          }
         })
+        model.position.sub(center)
+        const ns = 1.42 / maxAxis
+        model.scale.set(ns, ns, ns * coinDepth)
+
+        // Label texture
+        const labelCanvas = document.createElement('canvas')
+        labelCanvas.width = 1024
+        labelCanvas.height = 256
+        const lctx = labelCanvas.getContext('2d')
+        if (lctx) {
+          lctx.fillStyle = '#202328'
+          lctx.font = '700 125px Arial, sans-serif'
+          lctx.textAlign = 'center'
+          lctx.textBaseline = 'middle'
+          lctx.fillText(label, labelCanvas.width / 2, labelCanvas.height / 2 + 4)
+        }
+        const labelTex = new THREE.CanvasTexture(labelCanvas)
+        labelTex.colorSpace = THREE.SRGBColorSpace
+        labelTex.anisotropy = 8
+        const labelMesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.92, 0.22),
+          new THREE.MeshBasicMaterial({
+            map: labelTex,
+            transparent: true,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+          }),
+        )
+        labelMesh.position.z = faceZ
+
+        outer.add(model)
+        outer.add(labelMesh)
       })
 
-      const resize = () => {
-        const w = container.clientWidth
-        const h = container.clientHeight
-        camera.aspect = w / h
-        camera.updateProjectionMatrix()
-        renderer.setSize(w, h)
-      }
       window.addEventListener('resize', resize)
 
-      let isVisible = false
-      const visObserver = new IntersectionObserver(
-        entries => {
-          isVisible = entries[0]?.isIntersecting ?? false
-        },
-        { threshold: 0, rootMargin: '200px' },
-      )
-      visObserver.observe(container)
+      const ro = new ResizeObserver(resize)
+      ro.observe(container)
 
       const clock = new THREE.Clock()
-
-      // Helper — set coin opacity (all materials + label)
-      const setCoinOpacity = (coin: Coin, op: number) => {
-        coin.materials.forEach(m => (m.opacity = op))
-        if (coin.labelMat) coin.labelMat.opacity = op
-      }
-
       const render = () => {
         frame = requestAnimationFrame(render)
-        if (!isVisible) return
+        if (!visible) return
         const t = clock.elapsedTime
-        const progress = clamp(window.__aliBridgeBuildProgress ?? 0)
-
-        const isMobile = window.innerWidth < 768
-        // Final positions for each coin
-        // Desktop: Execution left, AI middle, Strategy right
-        // Mobile:  Strategy top,  AI middle, Execution bottom
-        const finalPos = isMobile
-          ? {
-              strategy: { x: 0, y: 2.5, z: 0 },
-              execution: { x: 0, y: -2.5, z: 0 },
-              ai: { x: 0, y: 0, z: 0 },
-            }
-          : {
-              strategy: { x: 2.6, y: 0, z: 0 },
-              execution: { x: -2.6, y: 0, z: 0 },
-              ai: { x: 0, y: 0, z: 0 },
-            }
-
-        // Phase progresses
-        const strategyEnter = smoothstep(0.05, 0.18, progress)
-        const strategyMove = smoothstep(0.18, 0.32, progress)
-        const executionEnter = smoothstep(0.45, 0.60, progress)
-        const aiEnter = smoothstep(0.65, 0.80, progress)
-
-        if (coins.length === 3) {
-          const [strategy, execution, ai] = coins
-          // Strategy — enters centre, then slides to final
-          const sx = mix(0, finalPos.strategy.x, strategyMove)
-          const sy = mix(0, finalPos.strategy.y, strategyMove)
-          strategy.outer.position.set(sx, sy, 0)
-          strategy.outer.scale.setScalar(mix(0, 1.0, strategyEnter))
-          setCoinOpacity(strategy, strategyEnter)
-          strategy.outer.rotation.y = Math.sin(t * 0.4) * 0.18
-          strategy.outer.rotation.x = Math.sin(t * 0.32) * 0.06
-
-          // Execution — fades in at final position
-          execution.outer.position.set(
-            finalPos.execution.x,
-            finalPos.execution.y,
-            0,
-          )
-          execution.outer.scale.setScalar(mix(0, 1.0, executionEnter))
-          setCoinOpacity(execution, executionEnter)
-          execution.outer.rotation.y = Math.sin(t * 0.4 + 1.7) * 0.18
-          execution.outer.rotation.x = Math.sin(t * 0.32 + 0.9) * 0.06
-
-          // AI — scales up from middle bottom into centre
-          const aiStartY = isMobile ? -1 : 0
-          const aiStartZ = isMobile ? 0 : -1
-          ai.outer.position.set(
-            finalPos.ai.x,
-            mix(aiStartY, finalPos.ai.y, aiEnter),
-            mix(aiStartZ, finalPos.ai.z, aiEnter),
-          )
-          ai.outer.scale.setScalar(mix(0, 1.0, aiEnter))
-          setCoinOpacity(ai, aiEnter)
-          ai.outer.rotation.y = Math.sin(t * 0.45 + 3.4) * 0.22
-          ai.outer.rotation.x = Math.sin(t * 0.36 + 1.8) * 0.08
-        }
-
+        const delta = clock.getDelta()
+        // Smooth entry — ease scale toward 1 once the card is in view
+        entryT += (1 - entryT) * Math.min(1, delta * 2.6)
+        outer.scale.setScalar(entryT)
+        // Gentle idle wobble
+        outer.rotation.y = Math.sin(t * 0.45) * 0.22
+        outer.rotation.x = Math.sin(t * 0.35) * 0.08
         renderer.render(scene, camera)
       }
       render()
 
+      const setVisible = (v: boolean) => {
+        visible = v
+      }
+      ;(container as HTMLDivElement & { __setVisible?: (v: boolean) => void }).__setVisible = setVisible
+
       cleanup = () => {
         cancelAnimationFrame(frame)
         window.removeEventListener('resize', resize)
-        visObserver.disconnect()
+        ro.disconnect()
         const geos = new Set<import('three').BufferGeometry>()
         const mats = new Set<import('three').Material>()
         scene.traverse(obj => {
@@ -380,166 +190,150 @@ export default function AliBridgeBuild() {
         renderer.dispose()
       }
     }
-
     boot()
     return () => {
       disposed = true
       cleanup()
     }
-  }, [])
+  }, [label])
 
-  // ── SVG: AI connection curves drawn by scroll progress
+  // Sync visibility flag with the render loop (allows render to skip when
+  // off-screen and resume once in view).
   useEffect(() => {
-    if (!svgRef.current || !sectionRef.current) return
-    const svg = svgRef.current
-    const curveStrat = svg.querySelector<SVGPathElement>('#curve-strategy')
-    const curveExec = svg.querySelector<SVGPathElement>('#curve-execution')
-    const curveDirect = svg.querySelector<SVGPathElement>('#curve-direct')
+    const el = containerRef.current as
+      | (HTMLDivElement & { __setVisible?: (v: boolean) => void })
+      | null
+    el?.__setVisible?.(isInView)
+  }, [isInView])
 
-    const setupPath = (el: SVGPathElement | null) => {
-      if (!el) return
-      const len = el.getTotalLength()
-      el.style.strokeDasharray = `${len}`
-      el.style.strokeDashoffset = `${len}`
-    }
-    setupPath(curveStrat)
-    setupPath(curveExec)
-    setupPath(curveDirect)
+  return (
+    <div ref={containerRef} className="ali-bb-coin" aria-hidden>
+      <canvas ref={canvasRef} />
+    </div>
+  )
+}
+
+// ── Reveal-on-scroll wrapper for text cards ─────────────────────
+function RevealCard({
+  children,
+  align,
+  className = '',
+}: {
+  children: React.ReactNode
+  align: 'left' | 'right' | 'center'
+  className?: string
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const isInView = useInView(ref, { once: true, margin: '-15%' })
+  return (
+    <motion.div
+      ref={ref}
+      className={`ali-bb-card ali-bb-card--${align} ${className}`}
+      initial={{ opacity: 0, y: 36 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 36 }}
+      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+// ── Main section ────────────────────────────────────────────────
+export default function AliBridgeBuild() {
+  const sectionRef = useRef<HTMLElement>(null)
+  const pathRef = useRef<SVGPathElement>(null)
+
+  useEffect(() => {
+    if (!sectionRef.current || !pathRef.current) return
+    const path = pathRef.current
+    const len = path.getTotalLength()
+    path.style.strokeDasharray = `${len}`
+    path.style.strokeDashoffset = `${len}`
 
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
+      gsap.to(path, {
+        strokeDashoffset: 0,
+        ease: 'none',
         scrollTrigger: {
           trigger: sectionRef.current,
-          start: 'top top',
-          end: `+=${SECTION_PIN_DISTANCE}`,
-          scrub: 0.5,
+          start: 'top 70%',
+          end: 'bottom 60%',
+          scrub: 0.7,
         },
       })
-      // Direct Strategy↔Execution curve draws after Execution enters
-      tl.to(curveDirect, { strokeDashoffset: 0, duration: 0.10 }, 0.58)
-      // Then AI joins, and curves from AI to each side draw
-      tl.to(curveStrat, { strokeDashoffset: 0, duration: 0.08 }, 0.78)
-      tl.to(curveExec, { strokeDashoffset: 0, duration: 0.08 }, 0.78)
     }, sectionRef)
-
     return () => ctx.revert()
   }, [])
 
   return (
-    <section
-      ref={sectionRef}
-      className="ali-bb"
-      aria-label="Bridge the Strategy to Execution Gap"
-    >
-      <canvas ref={canvasRef} className="ali-bb-canvas" aria-hidden />
-
-      {/* SVG overlay — AI connection curves (drawn by scroll), travelling pulses */}
+    <section ref={sectionRef} className="ali-bb" aria-label="Bridge the Strategy to Execution Gap">
+      {/* Vector line — sits behind everything else, draws as user scrolls.
+          viewBox covers the section as a 100×100 grid so each card can be
+          placed by percentage and the path will track them. */}
       <svg
-        ref={svgRef}
-        className="ali-bb-svg"
-        viewBox="0 0 1200 600"
-        preserveAspectRatio="xMidYMid meet"
+        className="ali-bb-line"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
         aria-hidden
       >
-        <defs>
-          <linearGradient id="curve-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(196,151,58,0)" />
-            <stop offset="30%" stopColor="rgba(196,151,58,0.6)" />
-            <stop offset="70%" stopColor="rgba(196,151,58,0.6)" />
-            <stop offset="100%" stopColor="rgba(196,151,58,0)" />
-          </linearGradient>
-          <filter id="bb-pulse-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="4" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        {/* Direct curve: Execution (left) → Strategy (right), bypasses centre */}
         <path
-          id="curve-direct"
-          d="M 230 300 Q 600 130 970 300"
-          stroke="url(#curve-grad)"
-          strokeWidth="1.5"
+          ref={pathRef}
+          d="
+            M 50 6
+            C 50 14, 30 14, 28 20
+            C 26 28, 72 32, 72 42
+            C 72 50, 50 48, 50 56
+            C 50 64, 72 66, 72 74
+            C 72 82, 30 82, 28 90
+          "
+          stroke="#ffffff"
+          strokeWidth="0.32"
           fill="none"
           strokeLinecap="round"
-          strokeOpacity="0.6"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
         />
-        {/* AI ↔ Strategy curve */}
-        <path
-          id="curve-strategy"
-          d="M 600 300 Q 770 360 970 300"
-          stroke="var(--ali-gold)"
-          strokeWidth="2"
-          fill="none"
-          strokeLinecap="round"
-        />
-        {/* AI ↔ Execution curve */}
-        <path
-          id="curve-execution"
-          d="M 600 300 Q 430 360 230 300"
-          stroke="var(--ali-gold)"
-          strokeWidth="2"
-          fill="none"
-          strokeLinecap="round"
-        />
-
-        {/* Travelling AI pulses — start automatically once curves are drawn */}
-        <circle r="5" fill="var(--ali-gold)" filter="url(#bb-pulse-glow)">
-          <animateMotion
-            dur="3.4s"
-            repeatCount="indefinite"
-            begin="2.5s"
-            path="M 600 300 Q 770 360 970 300"
-          />
-        </circle>
-        <circle r="5" fill="var(--ali-gold)" filter="url(#bb-pulse-glow)">
-          <animateMotion
-            dur="3.4s"
-            repeatCount="indefinite"
-            begin="3.2s"
-            path="M 600 300 Q 430 360 230 300"
-          />
-        </circle>
-        <circle r="4" fill="var(--ali-gold)" filter="url(#bb-pulse-glow)" opacity="0.7">
-          <animateMotion
-            dur="5s"
-            repeatCount="indefinite"
-            begin="4s"
-            path="M 230 300 Q 600 130 970 300"
-          />
-        </circle>
       </svg>
 
-      {/* Text overlay — 5 phases, stacked at the same screen position so each
-          phase replaces the previous one with a blur-up reveal */}
-      <div className="ali-bb-text-stack">
-        <div ref={phase1Ref} className="ali-bb-phase">
-          <p className="ali-bb-lead">Most organizations have</p>
-          <h2 className="ali-bb-heading">Strategy teams</h2>
-        </div>
-        <div ref={phase2Ref} className="ali-bb-phase">
-          <p className="ali-bb-lead">and</p>
-          <h2 className="ali-bb-heading">delivery units.</h2>
-          <p className="ali-bb-lead ali-bb-lead--italic">
-            No one owns what's in between.
+      <div className="ali-bb-grid">
+        {/* Row 1 — Most organizations have (centred) */}
+        <RevealCard align="center" className="ali-bb-row-top">
+          <p className="ali-bb-intro">Most organizations have</p>
+        </RevealCard>
+
+        {/* Row 2 — Strategy team / coin (left) */}
+        <RevealCard align="left" className="ali-bb-row-strategy">
+          <h3 className="ali-bb-label">Strategy team</h3>
+          <SingleCoin label="STRATEGY" />
+        </RevealCard>
+
+        {/* Row 3 — delivery units text (right) */}
+        <RevealCard align="right" className="ali-bb-row-delivery">
+          <p className="ali-bb-body">
+            and <em>delivery units</em>. No one owns what&apos;s in between.
           </p>
-        </div>
-        <div ref={phase3Ref} className="ali-bb-phase">
-          <p className="ali-bb-lead">We are here to bridge the strategy to</p>
-          <h2 className="ali-bb-heading">Execution gap</h2>
-        </div>
-        <div ref={phase4Ref} className="ali-bb-phase">
-          <p className="ali-bb-lead">with the help of</p>
-          <h2 className="ali-bb-heading">Artificial Intelligence</h2>
-        </div>
-        <div ref={phase5Ref} className="ali-bb-phase">
-          <p className="ali-bb-final">
-            to make that space <em>sharper</em>.
+        </RevealCard>
+
+        {/* Row 4 — we are here to bridge the (centred) */}
+        <RevealCard align="center" className="ali-bb-row-mid">
+          <p className="ali-bb-body ali-bb-body--strong">
+            We are here to bridge the
           </p>
-        </div>
+        </RevealCard>
+
+        {/* Row 5 — to execution / coin (right) */}
+        <RevealCard align="right" className="ali-bb-row-execution">
+          <h3 className="ali-bb-label">to Execution.</h3>
+          <SingleCoin label="EXECUTION" />
+        </RevealCard>
+
+        {/* Row 6 — with the help of AI / coin (left) */}
+        <RevealCard align="left" className="ali-bb-row-ai">
+          <p className="ali-bb-body">with the help of</p>
+          <SingleCoin label="AI" />
+          <h3 className="ali-bb-label ali-bb-label--gold">Artificial Intelligence</h3>
+          <p className="ali-bb-body ali-bb-body--muted">to make that space sharper.</p>
+        </RevealCard>
       </div>
     </section>
   )
