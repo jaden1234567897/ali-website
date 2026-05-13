@@ -1,4 +1,8 @@
-﻿@import url("https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,600&family=Onest:wght@400;500;600;700;800;900&display=swap");
+﻿/* Single-family typography across the whole site: Literata at all weights.
+   The opsz axis (7..72) auto-tunes the letterforms for body vs display sizes,
+   so this one font does double duty — paragraphs, eyebrows, nav, AND big
+   serif headlines. Italics included for the gold emphasis phrases. */
+@import url("https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..700&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -46,7 +50,7 @@ body {
     radial-gradient(circle at 16% 78%, oklch(0.88 0.065 82 / 0.34), transparent 28vw),
     linear-gradient(180deg, oklch(0.985 0.004 220), var(--bg-deep));
   color: var(--ink);
-  font-family: "Onest", "Segoe UI Variable", "Segoe UI", sans-serif;
+  font-family: "Literata", Georgia, serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
 }
@@ -124,7 +128,7 @@ dd {
   display: grid;
   gap: 5px;
   color: var(--muted);
-  font-family: "Onest", "Segoe UI Variable", "Segoe UI", sans-serif;
+  font-family: "Literata", Georgia, serif;
 }
 
 .specimen-label span,
@@ -216,7 +220,7 @@ dd {
 .motion-lab-panel h1 {
   margin-top: 4px;
   color: var(--ink-strong);
-  font-family: "Onest", "Segoe UI Variable", "Segoe UI", sans-serif;
+  font-family: "Literata", Georgia, serif;
   font-size: 30px;
   font-weight: 760;
   letter-spacing: -0.045em;
@@ -644,7 +648,7 @@ h1 span {
   display: block;
   max-width: none;
   color: var(--ink-strong);
-  font-family: "Onest", "Segoe UI Variable", "Segoe UI", sans-serif;
+  font-family: "Literata", Georgia, serif;
   font-size: clamp(68px, 5.35vw, 104px);
   font-weight: 400;
   letter-spacing: -0.055em;
@@ -763,7 +767,7 @@ h1 span {
 .bridge-heading h2 {
   max-width: 12ch;
   color: var(--ink-strong);
-  font-family: "Onest", "Segoe UI Variable", "Segoe UI", sans-serif;
+  font-family: "Literata", Georgia, serif;
   font-size: clamp(44px, 4.1vw, 76px);
   font-weight: 450;
   letter-spacing: -0.065em;
@@ -2370,7 +2374,7 @@ h1 span {
   --ali-section-y: clamp(80px, 10vw, 140px);
   --ali-container: 1200px;
   --font-display: "Literata", Georgia, serif;
-  --font-body: "Onest", "Segoe UI Variable", "Segoe UI", sans-serif;
+  --font-body: "Literata", Georgia, serif;
 }
 
 .ali-site {
