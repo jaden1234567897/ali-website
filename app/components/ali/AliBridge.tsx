@@ -14,7 +14,10 @@ declare global {
   }
 }
 
-const SECTION_PIN_DISTANCE = 5000
+// ali-v3: 5000 → 6500 px of pinned scroll. The extra 1500 px (~14 wheel
+// detents) is spent on extending the AI solo phase so all six AI bullets
+// fully reveal and HOLD visible before the Execution coin enters.
+const SECTION_PIN_DISTANCE = 6500
 
 function clamp(value: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value))
@@ -418,12 +421,13 @@ export default function AliBridge() {
       )
 
       // ── Phase F (ali-v3): AI solo — random points reveal on LEFT, same
-      //    blur-up animation as "Why strategy fails". Mirrors the Strategy
-      //    zoom panel exactly so the two coins feel like equal beats. ──
+      //    blur-up animation as "Why strategy fails". Re-timed so all six
+      //    bullets fully reveal BEFORE any fade and there's a clear hold
+      //    window where every point is readable.
       tl.to(
         aiHeaderRef.current,
         { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.04 },
-        0.87,
+        0.84,
       )
       tl.to(
         aiBulletsRef.current,
@@ -431,28 +435,33 @@ export default function AliBridge() {
           opacity: 1,
           y: 0,
           filter: 'blur(0px)',
-          stagger: 0.014,
-          duration: 0.04,
+          // 6 bullets × stagger 0.01 + duration 0.03 = last bullet fully
+          // revealed at progress 0.85 + 0.05 + 0.03 = 0.93. The hold runs
+          // from 0.93 to 0.97 — about 260 px of scroll where every line
+          // is clear before the fade-out begins.
+          stagger: 0.01,
+          duration: 0.03,
         },
-        0.89,
+        0.85,
       )
-      // AI text fades out as the Execution solo begins.
+      // AI text fades out only AFTER the full hold window — same moment
+      // the Execution coin starts rising from below.
       tl.to(
         aiHeaderRef.current,
-        { opacity: 0, filter: 'blur(6px)', duration: 0.04 },
-        0.94,
+        { opacity: 0, filter: 'blur(6px)', duration: 0.03 },
+        0.97,
       )
       tl.to(
         aiBulletsRef.current,
-        { opacity: 0, filter: 'blur(6px)', stagger: 0.005, duration: 0.04 },
-        0.94,
+        { opacity: 0, filter: 'blur(6px)', stagger: 0.004, duration: 0.03 },
+        0.97,
       )
 
       // ── Phase G: Execution solo — "My role" reveals on LEFT ──
       tl.to(
         rightHeaderRef.current,
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.04 },
-        0.965,
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.03 },
+        0.985,
       )
       tl.to(
         rightBulletsRef.current,
@@ -460,10 +469,10 @@ export default function AliBridge() {
           opacity: 1,
           y: 0,
           filter: 'blur(0px)',
-          stagger: 0.008,
-          duration: 0.03,
+          stagger: 0.005,
+          duration: 0.02,
         },
-        0.98,
+        0.995,
       )
     }, section)
 
@@ -759,8 +768,11 @@ export default function AliBridge() {
         // ali-v3: duo replaced by two sequential solos. aiSoloT brings AI
         // down from above to the zoom spot; executionSoloT brings AI back
         // up and Execution up from below to the zoom spot.
-        const aiSoloT = smoothstep(0.85, 0.91, progress)
-        const executionSoloT = smoothstep(0.93, 1.00, progress)
+        // Re-timed so AI has a clear HOLD window (0.93-0.96) where all
+        // six bullets are fully revealed and visible before Execution
+        // begins entering at 0.96.
+        const aiSoloT = smoothstep(0.82, 0.87, progress)
+        const executionSoloT = smoothstep(0.96, 1.00, progress)
         const aliveT = smoothstep(0.48, 0.55, progress) * (1 - smoothstep(0.55, 0.62, progress))
 
         // Per-coin entry timing — Strategy first, AI/Execution delayed
