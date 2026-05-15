@@ -13,7 +13,8 @@ import AliCurvedAI from './components/ali/AliCurvedAI'
 // ali-v3: AliServices removed — the four engagements live only in the
 // Tier Cards section now, so this "Four ways we work together" panel
 // was duplicating the same idea visually.
-import AliProcess from './components/ali/AliProcess'
+// ali-v3: AliProcess ("From diagnosis to delivery") removed too — the
+// page narrative goes straight from gallery → testimonials → tier cards.
 // Branch-2 swap: AliTestimonials → AliFlowTestimonials (infinite marquee
 // in two rows moving in opposite directions, replacing the static 3-card grid)
 import AliFlowTestimonials from './components/ali/AliFlowTestimonials'
@@ -72,7 +73,6 @@ export default function Home() {
         {/* Curved AI screenshot slider */}
         <AliCurvedAI />
 
-        <AliProcess />
         <AliFlowTestimonials />
 
         {/* Branch-2: Four engagement options (Advisory / Materials / 1:1 / Course)
