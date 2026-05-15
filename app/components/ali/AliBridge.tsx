@@ -79,6 +79,21 @@ const finalDuoPoses = [
   { x: 1.5, y: -0.65, z: 0.3, s: 1.05, rx: 0, ry: 0, rz: 0 },// Execution → bottom-right
 ]
 
+// ali-v3: replaces the duo with two SOLO phases. AI enters from above
+// and lands at the same right-side zoom position Strategy used; then AI
+// exits up and Execution enters from below to land at the same spot.
+// One coin visible at a time, same size as Strategy's zoom.
+const aiSoloPoses = [
+  { x: 0, y: 4.5, z: -2, s: 0.6, rx: 0, ry: 0, rz: 0 },     // Strategy hidden above
+  { x: 1.45, y: 0, z: 1.0, s: 1.65, rx: 0, ry: 0, rz: 0 }, // AI at Strategy zoom pos
+  { x: 0, y: -4.5, z: -2, s: 0.6, rx: 0, ry: 0, rz: 0 },   // Execution hidden below
+]
+const executionSoloPoses = [
+  { x: 0, y: 4.5, z: -2, s: 0.6, rx: 0, ry: 0, rz: 0 },    // Strategy still hidden above
+  { x: 0, y: 4.5, z: -2, s: 0.6, rx: 0, ry: 0, rz: 0 },    // AI exits upward → above
+  { x: 1.45, y: 0, z: 1.0, s: 1.65, rx: 0, ry: 0, rz: 0 }, // Execution at Strategy zoom pos
+]
+
 // ── MOBILE pose tables ─────────────────────────────────────────────
 // Two-step flow: coin arrives at CENTER, holds, then LIFTS to upper third
 // (not high enough to crop behind the fixed nav). Text columns occupy the
@@ -114,6 +129,17 @@ const finalDuoPosesMobile = [
   { x: 0, y: 5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },
   { x: -0.65, y: 0.85, z: 0.3, s: 0.7, rx: 0, ry: 0, rz: 0 },// Governance upper-left
   { x: 0.65, y: 0.85, z: 0.3, s: 0.7, rx: 0, ry: 0, rz: 0 }, // Execution upper-right
+]
+// ali-v3 mobile: sequential solos at the same upper-third spot Strategy used.
+const aiSoloPosesMobile = [
+  { x: 0, y: 5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },        // Strategy hidden above
+  { x: 0, y: 0.85, z: 0.4, s: 0.8, rx: 0, ry: 0, rz: 0 },    // AI at Strategy-zoom mobile pos
+  { x: 0, y: -5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },       // Execution hidden below
+]
+const executionSoloPosesMobile = [
+  { x: 0, y: 5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },        // Strategy still hidden above
+  { x: 0, y: 5, z: -2, s: 0.5, rx: 0, ry: 0, rz: 0 },        // AI exits upward → above
+  { x: 0, y: 0.85, z: 0.4, s: 0.8, rx: 0, ry: 0, rz: 0 },    // Execution at Strategy-zoom pos
 ]
 
 // ali-v3: the middle coin is now ARTIFICIAL INTELLIGENCE (was GOVERNANCE).
@@ -669,15 +695,20 @@ export default function AliBridge() {
         // 0.48 → 0.55  Triangle rotates CCW
         // 0.55 → 0.62  Strategy zooms to right
         // 0.62 → 0.78  "Why fails" reveals + holds
-        // 0.78 → 0.85  Strategy + bullets fade out, duo arrives
-        // 0.85 → 1.00  "My role" reveals (also on LEFT)
+        // 0.78 → 0.85  Strategy + bullets fade out
+        // 0.85 → 0.91  AI ENTERS FROM TOP, lands at Strategy zoom position (ali-v3)
+        // 0.91 → 0.93  AI held alone on the right
+        // 0.93 → 1.00  AI EXITS UP, Execution ENTERS FROM BELOW to the same spot
         const reverseT = smoothstep(0, 0.20, progress)
         const starHoldT = smoothstep(0.20, 0.40, progress)
         const detachT = smoothstep(0.40, 0.48, progress)
         const rotateT = smoothstep(0.48, 0.55, progress)
         const zoomT = smoothstep(0.55, 0.62, progress)
-        const duoT = smoothstep(0.84, 0.91, progress)
-        // (mobile lift sub-phases are computed below near the coin loop)
+        // ali-v3: duo replaced by two sequential solos. aiSoloT brings AI
+        // down from above to the zoom spot; executionSoloT brings AI back
+        // up and Execution up from below to the zoom spot.
+        const aiSoloT = smoothstep(0.85, 0.91, progress)
+        const executionSoloT = smoothstep(0.93, 1.00, progress)
         const aliveT = smoothstep(0.48, 0.55, progress) * (1 - smoothstep(0.55, 0.62, progress))
 
         // Per-coin entry timing — Strategy first, AI/Execution delayed
@@ -704,9 +735,9 @@ export default function AliBridge() {
         rig.position.y = starRollY * (1 - recentre)
         rig.scale.setScalar(1)
 
-        // Mobile sub-phase progresses for the two-step centre→lift flow.
+        // Mobile sub-phase: Strategy still lifts from centre → upper third.
+        // The duo lift no longer applies (duo is gone — replaced by solos).
         const liftStrategyT = mobile ? smoothstep(0.62, 0.68, progress) : 0
-        const liftDuoT = mobile ? smoothstep(0.91, 0.96, progress) : 0
 
         groups.forEach(({ outer, inner, materials, labelMat }, index) => {
           const init = initialPoses[index]
@@ -716,7 +747,9 @@ export default function AliBridge() {
           // On mobile, the "zoom" target is CENTRE first; the lift to top happens
           // in a separate stage 4b below. On desktop, sz is the desktop zoom pose.
           const sz = mobile ? strategyCenterPosesMobile[index] : strategyZoomPoses[index]
-          const fd = mobile ? duoCenterPosesMobile[index] : finalDuoPoses[index]
+          // ali-v3: two solo target poses replace the single duo target.
+          const aiSolo = mobile ? aiSoloPosesMobile[index] : aiSoloPoses[index]
+          const execSolo = mobile ? executionSoloPosesMobile[index] : executionSoloPoses[index]
           const tEntry = index === 0 ? strategyT : sideT
 
           // Stage 1: initial → star
@@ -755,32 +788,33 @@ export default function AliBridge() {
           ry = mix(ry, sz.ry, zoomT)
           rz = mix(rz, sz.rz, zoomT)
 
-          // Stage 5: zoom → duo (Strategy gone, Governance + Execution on right)
-          x = mix(x, fd.x, duoT)
-          y = mix(y, fd.y, duoT)
-          z = mix(z, fd.z, duoT)
-          s = mix(s, fd.s, duoT)
-          rx = mix(rx, fd.rx, duoT)
-          ry = mix(ry, fd.ry, duoT)
-          rz = mix(rz, fd.rz, duoT)
+          // Stage 5a (ali-v3): zoom → AI solo. AI moves DOWN from above to
+          // the same spot Strategy occupied; Strategy stays hidden above.
+          x = mix(x, aiSolo.x, aiSoloT)
+          y = mix(y, aiSolo.y, aiSoloT)
+          z = mix(z, aiSolo.z, aiSoloT)
+          s = mix(s, aiSolo.s, aiSoloT)
+          rx = mix(rx, aiSolo.rx, aiSoloT)
+          ry = mix(ry, aiSolo.ry, aiSoloT)
+          rz = mix(rz, aiSolo.rz, aiSoloT)
 
-          // Stage 4b + 5b (mobile): centre → lifted to upper third.
-          // Strategy lifts during 0.62→0.68; Governance + Execution lift
-          // together during 0.91→0.96. Bullets reveal AFTER each lift.
-          if (mobile) {
-            if (index === 0) {
-              const lift = strategyZoomPosesMobile[0]
-              x = mix(x, lift.x, liftStrategyT)
-              y = mix(y, lift.y, liftStrategyT)
-              z = mix(z, lift.z, liftStrategyT)
-              s = mix(s, lift.s, liftStrategyT)
-            } else {
-              const lift = finalDuoPosesMobile[index]
-              x = mix(x, lift.x, liftDuoT)
-              y = mix(y, lift.y, liftDuoT)
-              z = mix(z, lift.z, liftDuoT)
-              s = mix(s, lift.s, liftDuoT)
-            }
+          // Stage 5b (ali-v3): AI solo → Execution solo. AI rises back up
+          // and out of view; Execution rises from below into the spot.
+          x = mix(x, execSolo.x, executionSoloT)
+          y = mix(y, execSolo.y, executionSoloT)
+          z = mix(z, execSolo.z, executionSoloT)
+          s = mix(s, execSolo.s, executionSoloT)
+          rx = mix(rx, execSolo.rx, executionSoloT)
+          ry = mix(ry, execSolo.ry, executionSoloT)
+          rz = mix(rz, execSolo.rz, executionSoloT)
+
+          // Stage 4b (mobile): Strategy centre → lifted to upper third.
+          if (mobile && index === 0) {
+            const lift = strategyZoomPosesMobile[0]
+            x = mix(x, lift.x, liftStrategyT)
+            y = mix(y, lift.y, liftStrategyT)
+            z = mix(z, lift.z, liftStrategyT)
+            s = mix(s, lift.s, liftStrategyT)
           }
 
           outer.position.set(x, y, z)
@@ -792,16 +826,25 @@ export default function AliBridge() {
           const breathe = aliveT * Math.sin(time * 0.6 + index * 1.7) * 0.025
           inner.rotation.set(rx + hoverTiltX + breathe, ry + hoverTiltY, 0)
 
-          // Per-coin per-phase opacity:
-          // Strategy fades out as duo phase begins.
-          // Governance + Execution fade out during zoom (Strategy alone),
-          // fade back in during duo.
+          // ali-v3 per-coin opacity timeline:
+          //   Strategy : enters with tEntry; fades out as AI solo starts.
+          //   AI       : enters with tEntry; hides during Strategy zoom;
+          //              fades IN during AI solo; fades OUT during Execution solo.
+          //   Execution: enters with tEntry; hides during Strategy zoom;
+          //              stays hidden during AI solo; fades IN during Execution solo.
           let coinOpacity = mix(0, 1, tEntry)
           if (index === 0) {
-            coinOpacity = mix(coinOpacity, 0, duoT)
-          } else {
+            // Strategy: fade out as AI takes its spot
+            coinOpacity = mix(coinOpacity, 0, aiSoloT)
+          } else if (index === 1) {
+            // AI: hide during Strategy zoom, reveal during AI solo, hide during Execution solo
             coinOpacity = mix(coinOpacity, 0, zoomT)
-            coinOpacity = mix(coinOpacity, 1, duoT)
+            coinOpacity = mix(coinOpacity, 1, aiSoloT)
+            coinOpacity = mix(coinOpacity, 0, executionSoloT)
+          } else {
+            // Execution: hide during Strategy zoom, stay hidden through AI solo, reveal during Execution solo
+            coinOpacity = mix(coinOpacity, 0, zoomT)
+            coinOpacity = mix(coinOpacity, 1, executionSoloT)
           }
 
           materials.forEach(m => {
