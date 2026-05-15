@@ -3843,22 +3843,97 @@ h1 span {
 
 .ali-course-visual {
   position: relative;
-  /* Wider aspect ratio so the open book spread fills the canvas — the
-     spread is ~2× as wide as the closed cover, so a square frame wasted
-     vertical space and shrunk the readable text. */
-  aspect-ratio: 5 / 4;
+  /* ali-v3: no longer wraps a 3D book — just the dark static card. */
   display: flex;
   align-items: center;
   justify-content: center;
-  perspective: 1800px;
+  padding: 24px;
+}
+
+/* Dark static "tier-card style" visual that replaces the 3D book.
+   Same visual language as the Tier Cards' VOL. 04 (dark variant) so the
+   course card reads as continuous with the engagements above. */
+.ali-course-card {
+  width: 100%;
+  max-width: 360px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05), transparent 14px),
+    linear-gradient(135deg, #1f1f1f, #0a0a0a);
+  border: 1px solid rgba(196, 151, 58, 0.30);
+  border-radius: 18px;
+  padding: 32px 28px 28px;
+  color: rgba(255, 255, 255, 0.92);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow:
+    0 24px 50px -24px rgba(13, 13, 13, 0.45),
+    0 0 0 1px rgba(196, 151, 58, 0.05);
+}
+
+.ali-course-card-eyebrow {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  color: var(--ali-gold);
+}
+
+.ali-course-card-title {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 2vw, 30px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  margin: 0;
+}
+
+.ali-course-card-tagline {
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.65);
+  margin: -4px 0 0;
+}
+
+.ali-course-card-features {
+  list-style: none;
+  margin: 0;
+  padding: 18px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ali-course-card-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.ali-course-card-check {
+  color: var(--ali-gold);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.ali-course-card-tag {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--ali-gold);
+  margin-top: 4px;
 }
 
 @media (max-width: 880px) {
   .ali-course-inner { grid-template-columns: 1fr; }
-  /* Larger mobile size so the page text inside the 3D book stays readable
-     when the book opens to a spread. Was 360px which made interior text
-     near-illegible on a phone. */
   .ali-course-visual { max-width: 100%; width: 100%; margin: 0 auto; }
+  .ali-course-card { max-width: 420px; }
 }
 
 /* â”€â”€â”€ Booking CTA â”€â”€â”€ */
@@ -4987,9 +5062,11 @@ h1 span {
 
 .ali-tiers-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* ali-v3: 4 → 3 columns now that the Course card moved to its own
+     section below. */
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  max-width: 1280px;
+  max-width: 1080px;
   margin: 0 auto;
   align-items: stretch;
 }

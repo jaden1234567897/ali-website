@@ -18,6 +18,9 @@ import AliCurvedAI from './components/ali/AliCurvedAI'
 // Branch-2 swap: AliTestimonials → AliFlowTestimonials (infinite marquee
 // in two rows moving in opposite directions, replacing the static 3-card grid)
 import AliFlowTestimonials from './components/ali/AliFlowTestimonials'
+// ali-v3: course section re-added (3D interactive book swapped for a
+// static dark tier-card-style visual on the right).
+import AliCourseTeaser from './components/ali/AliCourseTeaser'
 import AliBooking from './components/ali/AliBooking'
 import AliCinematicFooter from './components/ali/AliCinematicFooter'
 import AliWhatsAppFloat from './components/ali/AliWhatsAppFloat'
@@ -75,10 +78,14 @@ export default function Home() {
 
         <AliFlowTestimonials />
 
-        {/* Branch-2: Four engagement options (Advisory / Materials / 1:1 / Course)
-            placed right before the booking CTA — credibility above, decisive
-            offers + call-to-action below. */}
+        {/* ali-v3: Three engagement options (Advisory / Materials / 1:1).
+            The Course used to live as a fourth column here — it's now its
+            own AliCourseTeaser section right below this grid. */}
         <AliTierCards />
+
+        {/* ali-v3: Course teaser with the dark "VOL. 04" tier card as the
+            right-side visual (was a 3D interactive book before). */}
+        <AliCourseTeaser />
 
         <AliBooking />
       </main>

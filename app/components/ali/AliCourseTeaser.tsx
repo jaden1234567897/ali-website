@@ -2,13 +2,25 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import AliCourseBook3D from './AliCourseBook3D'
+import { Check } from 'lucide-react'
 
 const FEATURES = [
   '6 in-depth video modules',
   'Downloadable frameworks & templates',
   'AI-assisted exercises',
   'Lifetime access + updates',
+]
+
+// ali-v3: the right-side visual is no longer the 3D interactive book —
+// it's the same dark "tier card" design that used to live as VOL. 04 in
+// the Tier Cards grid, but pulled out into this section as a static
+// hero card.
+const COURSE_CARD_FEATURES = [
+  '6 in-depth video modules',
+  'Downloadable frameworks',
+  'AI-assisted exercises',
+  'Lifetime access + updates',
+  'Free Strategy Execution Diagnostic',
 ]
 
 export default function AliCourseTeaser() {
@@ -95,7 +107,22 @@ export default function AliCourseTeaser() {
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
             style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
           >
-            <AliCourseBook3D />
+            <div className="ali-course-card">
+              <div className="ali-course-card-eyebrow">VOL. 04</div>
+              <h3 className="ali-course-card-title">From Strategy to Execution</h3>
+              <p className="ali-course-card-tagline">
+                A self-paced course with AI built in.
+              </p>
+              <ul className="ali-course-card-features">
+                {COURSE_CARD_FEATURES.map(f => (
+                  <li key={f}>
+                    <Check size={15} strokeWidth={2.5} className="ali-course-card-check" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="ali-course-card-tag">COMING SOON · 2026</div>
+            </div>
           </motion.div>
         </div>
       </div>

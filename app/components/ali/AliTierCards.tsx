@@ -74,23 +74,10 @@ const TIERS: Tier[] = [
     cta: { label: 'Book a call', href: '#book' },
     variant: 'light',
   },
-  {
-    id: 'course',
-    eyebrow: 'VOL. 04',
-    title: 'From Strategy to Execution',
-    tagline: 'A self-paced course with AI built in.',
-    tag: 'COMING SOON · 2026',
-    tagTone: 'gold',
-    features: [
-      '6 in-depth video modules',
-      'Downloadable frameworks',
-      'AI-assisted exercises',
-      'Lifetime access + updates',
-      'Free Strategy Execution Diagnostic',
-    ],
-    cta: { label: 'Notify Me', type: 'email' },
-    variant: 'dark',
-  },
+  // ali-v3: VOL. 04 "From Strategy to Execution" removed from the tier
+  // grid. It now lives in its own AliCourseTeaser section right below
+  // this grid, with the dark card design as the visual instead of the
+  // 3D book.
 ]
 
 export default function AliTierCards() {
@@ -107,11 +94,11 @@ export default function AliTierCards() {
             Engagements
           </p>
           <h2 className="ali-h2" style={{ maxWidth: 760, margin: '0 auto 16px' }}>
-            Four ways to <em>close the gap</em>
+            Three ways to <em>close the gap</em>
           </h2>
           <p className="ali-lede" style={{ margin: '0 auto 64px', maxWidth: 640 }}>
             Pick the engagement that matches the work in front of you — from a
-            single working session to a six-module course you can run anytime.
+            single working session to ongoing advisory.
           </p>
         </motion.div>
 
