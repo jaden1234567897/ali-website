@@ -325,7 +325,11 @@ main {
 }
 
 .hero-scroll-stage {
-  min-height: 240svh;
+  /* ali-v3: 240svh → 160svh. Removed 1 full butterfly roll from the
+     hero (1.5 → 0.5 rolls), so the stage shrinks proportionally to
+     keep the rotation-per-pixel rate identical. Saves ~80svh of
+     scroll before the nova pin begins. */
+  min-height: 160svh;
 }
 
 .site-nav {

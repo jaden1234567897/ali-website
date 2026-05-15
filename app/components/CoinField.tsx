@@ -299,14 +299,10 @@ export default function CoinField() {
         document.documentElement.style.setProperty('--hero-copy-hide', copyHide.toFixed(4))
 
         if (novaActive) {
-          // hero final Z = 6π ≡ 0 (mod 2π), so no visible snap when switching branch.
-          // A gentle time-based breathe gives the star formation life before the split.
-          // Rig keeps spinning FORWARD through the whole nova phase — same
-          // direction as the hero roll. The "reverse" is purely in the coin
-          // poses (star → triangle, edge-on → face-on); the rig never flips
-          // direction, so there's no momentary pause at the boundary.
-          // Hero ends at 3π; nova continues from 3π → 6π → 6.7π.
-          const heroExitZ = Math.PI * 3
+          // ali-v3: hero shortened by 1 full roll (1.5 → 0.5 rolls), so
+          // heroExitZ is now π not 3π. Nova continues from π → 4π → 4.7π.
+          // Total page rolls down from ~3.35 to ~2.35.
+          const heroExitZ = Math.PI * 1
           const continuedSpin = heroExitZ + reverseRollPhase * Math.PI * 3 + expandPhase * Math.PI * 0.7
           rig.position.set(0, 0, -0.02)
           rig.scale.setScalar(1)
@@ -314,13 +310,13 @@ export default function CoinField() {
         } else {
           rig.position.set(0, 0, -0.02)
           rig.scale.setScalar(1)
-          // 1.5 full turns over the hero scroll. Both X and Y wobble use the
-          // same sin(roll*π) curve so they return cleanly to 0 at roll=1,
-          // matching the nova rig's starting X/Y of 0 — no jitter at the boundary.
+          // ali-v3: 0.5 full turns over the hero scroll (was 1.5). The X/Y
+          // sin-wobble curves still return cleanly to 0 at roll=1 so the
+          // boundary into the nova rig stays jitter-free.
           rig.rotation.set(
             (reduced ? 0 : Math.sin(roll * Math.PI) * 0.1) - pointer.y * 0.055 * hoverStrength,
             (reduced ? 0 : Math.sin(roll * Math.PI) * 0.16) + pointer.x * 0.075 * hoverStrength,
-            roll * Math.PI * 3,
+            roll * Math.PI * 1,
           )
         }
 
