@@ -24,7 +24,7 @@ const PHOTOS: Photo[] = [
   // static-file servers and CDN paths mishandle spaces even with URL
   // encoding, which was leaving these tiles blank on the deployed site.
   { src: '/aboutme-2.webp', width: 960, height: 1280, alt: 'Field portrait' },
-  { src: '/aboutme-3.webp', width: 1536, height: 1152, alt: 'On the floor' },
+  // ali-v3: aboutme-3.webp removed from the gallery; aboutme-5 remains.
   { src: '/aboutme-4.webp', width: 1536, height: 1152, alt: 'In the room' },
   { src: '/aboutme-5.webp', width: 1536, height: 1152, alt: 'In the field' },
 ]

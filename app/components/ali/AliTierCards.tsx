@@ -54,7 +54,8 @@ const TIERS: Tier[] = [
       'Lifetime updates',
     ],
     cta: { label: 'Browse materials', href: '#materials' },
-    highlight: true,
+    // ali-v3: highlight removed → no more "MOST CHOSEN" pin on the
+    // Materials column. All four columns now read at equal visual weight.
     variant: 'light',
   },
   {
