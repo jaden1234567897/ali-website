@@ -191,20 +191,50 @@ export default function CoinField() {
           const outer = new THREE.Group()
           const inner = new THREE.Group()
           const model = proto.clone(true)
+
+          // Defensive material clone — on weak / integrated GPUs the
+          // PMREM-generated RoomEnvironment fails silently, leaving fully-
+          // metallic materials with nothing to reflect (they render pure
+          // black). Capping metalness at 0.85, lifting roughness, and
+          // adding a small emissive tint keeps the coin visibly silver
+          // even when no environment map is bound. envMapIntensity is
+          // bumped so good-GPU renders still pick up the full reflection.
+          model.traverse(obj => {
+            const mesh = obj as import('three').Mesh
+            if (!mesh.isMesh || !mesh.material) return
+            const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+            const fixed = list.map(m => {
+              const c = m.clone() as import('three').MeshStandardMaterial
+              if (typeof c.metalness === 'number') c.metalness = Math.min(c.metalness, 0.85)
+              if (typeof c.roughness === 'number') c.roughness = Math.max(c.roughness, 0.18)
+              if (c.emissive) c.emissive = new THREE.Color('#2a2a2a')
+              if (typeof c.envMapIntensity === 'number') c.envMapIntensity = 1.5
+              return c
+            })
+            mesh.material = fixed.length === 1 ? fixed[0] : fixed
+          })
+
           const label = new THREE.Mesh(
             new THREE.PlaneGeometry(0.92, 0.22),
             new THREE.MeshBasicMaterial({
               map: createLabelTexture(coinLabels[index]),
               transparent: true,
               depthWrite: false,
+              depthTest: false,
               side: THREE.DoubleSide,
             }),
           )
+          // renderOrder + depthTest:false guarantees the label paints AFTER
+          // the coin face — fixes engraving disappearing into z-fighting on
+          // GPUs with low depth-buffer precision.
+          label.renderOrder = 2
 
           model.position.sub(center)
           const normalizedScale = 1.42 / maxAxis
           model.scale.set(normalizedScale, normalizedScale, normalizedScale * coinDepth)
-          label.position.z = faceZ
+          // Push the label a touch further forward (0.012 → 0.024) so it
+          // clears the coin surface comfortably even at low z precision.
+          label.position.z = faceZ + 0.012
           inner.add(model)
           inner.add(label)
           outer.add(inner)
