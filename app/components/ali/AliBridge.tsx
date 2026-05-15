@@ -116,7 +116,10 @@ const finalDuoPosesMobile = [
   { x: 0.65, y: 0.85, z: 0.3, s: 0.7, rx: 0, ry: 0, rz: 0 }, // Execution upper-right
 ]
 
-const COIN_LABELS = ['STRATEGY', 'GOVERNANCE', 'EXECUTION']
+// ali-v3: the middle coin is now ARTIFICIAL INTELLIGENCE (was GOVERNANCE).
+// Two-line label because the text is too long to read at one line on the
+// coin face — createLabelTexture splits on the newline character.
+const COIN_LABELS = ['STRATEGY', 'ARTIFICIAL\nINTELLIGENCE', 'EXECUTION']
 
 const styles = {
   section: {
@@ -509,24 +512,33 @@ export default function AliBridge() {
       const groups: CoinGroup[] = []
 
       const createLabelTexture = (label: string) => {
-        const longLabel = label.length > 12
+        const lines = label.split('\n')
         const canvas = document.createElement('canvas')
         canvas.width = 1024
         canvas.height = 256
         const ctx = canvas.getContext('2d')
         if (ctx) {
-          const fontSize = 125
-          const maxTextWidth = canvas.width - (longLabel ? 20 : 0)
+          // Multi-line labels (e.g. ARTIFICIAL / INTELLIGENCE) need a
+          // smaller per-line font so two lines fit on the coin face.
+          const fontSize = lines.length > 1 ? 86 : 125
+          const lineHeight = fontSize * 1.05
+          const maxTextWidth = canvas.width - 20
           ctx.clearRect(0, 0, canvas.width, canvas.height)
           ctx.fillStyle = '#202328'
           ctx.font = `700 ${fontSize}px Arial, sans-serif`
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
-          ctx.save()
-          ctx.translate(canvas.width / 2, canvas.height / 2 + 4)
-          ctx.scale(Math.min(1, maxTextWidth / ctx.measureText(label).width), 1)
-          ctx.fillText(label, 0, 0)
-          ctx.restore()
+          // Vertically centre the block of lines on the coin face.
+          const totalH = (lines.length - 1) * lineHeight
+          const startY = canvas.height / 2 - totalH / 2 + 4
+          lines.forEach((line, i) => {
+            const widthScale = Math.min(1, maxTextWidth / ctx.measureText(line).width)
+            ctx.save()
+            ctx.translate(canvas.width / 2, startY + i * lineHeight)
+            ctx.scale(widthScale, 1)
+            ctx.fillText(line, 0, 0)
+            ctx.restore()
+          })
         }
         const tex = new THREE.CanvasTexture(canvas)
         tex.colorSpace = THREE.SRGBColorSpace
