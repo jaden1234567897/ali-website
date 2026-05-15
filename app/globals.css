@@ -4666,11 +4666,261 @@ h1 span {
 /* ============================================================
    ALI â€” CINEMATIC FOOTER (curtain reveal + GSAP magnetic pills)
    ============================================================ */
+/* ─── ali-v3 sticky footer (replaces .ali-cinematic-*) ──────────────────
+   Scroll-triggered sticky reveal: outer wrapper has clip-path so the
+   sticky panel beneath only shows inside its viewport-bound box. */
+.ali-sf-wrap {
+  position: relative;
+  width: 100%;
+  height: 70vh;
+  clip-path: polygon(0% 0, 100% 0%, 100% 100%, 0 100%);
+}
+
+.ali-sf-rail {
+  position: relative;
+  height: calc(100vh + 70vh);
+  top: -100vh;
+}
+
+.ali-sf-sticky {
+  height: 70vh;
+  position: sticky;
+  top: calc(100vh - 70vh);
+}
+
+.ali-sf {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(180deg, rgba(13, 13, 13, 0.04), transparent 30%),
+    linear-gradient(135deg, #f8f3e3 0%, #ece2c8 50%, #f5efde 100%);
+  color: var(--ali-ink);
+  padding: clamp(24px, 4vw, 56px) clamp(20px, 5vw, 80px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  font-family: var(--font-display);
+}
+
+.ali-sf-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(245, 239, 222, 0.4), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ali-sf-orb {
+  position: absolute;
+  width: clamp(220px, 30vw, 400px);
+  height: clamp(220px, 30vw, 400px);
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ali-sf-orb--tr {
+  top: -10%;
+  right: -8%;
+  background: radial-gradient(circle, rgba(196, 151, 58, 0.22) 0%, transparent 70%);
+}
+
+.ali-sf-orb--bl {
+  bottom: -10%;
+  left: -8%;
+  background: radial-gradient(circle, rgba(196, 151, 58, 0.14) 0%, transparent 70%);
+}
+
+/* ── Nav grid ── */
+.ali-sf-nav {
+  position: relative;
+  z-index: 1;
+}
+
+.ali-sf-nav-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(20px, 3vw, 40px) clamp(20px, 4vw, 80px);
+}
+
+@media (min-width: 768px) {
+  .ali-sf-nav-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.ali-sf-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ali-sf-col-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ali-muted);
+  border-bottom: 1px solid var(--ali-line);
+  padding-bottom: 6px;
+  margin: 0 0 8px;
+  transition: color 300ms ease;
+}
+
+.ali-sf-link {
+  font-size: 13px;
+  color: var(--ali-muted);
+  text-decoration: none;
+  position: relative;
+  width: fit-content;
+  transition: color 300ms ease;
+}
+
+.ali-sf-link:hover {
+  color: var(--ali-ink);
+}
+
+.ali-sf-link-label {
+  position: relative;
+  display: inline-block;
+}
+
+.ali-sf-link-underline {
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  height: 1.5px;
+  background: var(--ali-gold);
+  display: block;
+}
+
+/* ── Bottom row ── */
+.ali-sf-bottom {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-top: clamp(24px, 4vw, 56px);
+}
+
+@media (min-width: 768px) {
+  .ali-sf-bottom {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 32px;
+  }
+}
+
+.ali-sf-bottom-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.ali-sf-title {
+  font-family: var(--font-display);
+  font-size: clamp(56px, 12vw, 144px);
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+  background: linear-gradient(
+    90deg,
+    var(--ali-ink) 0%,
+    var(--ali-muted) 60%,
+    rgba(13, 13, 13, 0.4) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  cursor: default;
+  margin: 0;
+  user-select: none;
+}
+
+.ali-sf-subtitle-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.ali-sf-rule {
+  width: clamp(32px, 5vw, 56px);
+  height: 2px;
+  background: linear-gradient(90deg, var(--ali-gold), rgba(196, 151, 58, 0.3));
+  border-radius: 2px;
+  transform-origin: left center;
+}
+
+.ali-sf-subtitle {
+  font-size: 13px;
+  color: var(--ali-muted);
+  margin: 0;
+  letter-spacing: 0.04em;
+  font-family: var(--font-display);
+}
+
+.ali-sf-bottom-right {
+  text-align: left;
+}
+
+@media (min-width: 768px) {
+  .ali-sf-bottom-right {
+    text-align: right;
+  }
+}
+
+.ali-sf-copyright {
+  font-size: 11px;
+  color: var(--ali-muted);
+  margin: 0 0 12px;
+  letter-spacing: 0.04em;
+}
+
+.ali-sf-social-row {
+  display: flex;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .ali-sf-social-row {
+    justify-content: flex-end;
+  }
+}
+
+.ali-sf-social {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(196, 151, 58, 0.12);
+  border: 1px solid rgba(196, 151, 58, 0.28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ali-gold);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 300ms ease, color 300ms ease, border-color 300ms ease;
+}
+
+.ali-sf-social:hover {
+  background: var(--ali-gold);
+  color: var(--ali-cream);
+  border-color: var(--ali-gold);
+}
+
+/* ─── Legacy cinematic footer styles (kept so older branches that still
+       reference .ali-cinematic-* don't break — V1 + V2 use them). ─── */
 .ali-cinematic-wrap {
   position: relative;
   width: 100%;
   height: 100svh;
-  /* Curtain â€” content underneath only visible inside */
+  /* Curtain — content underneath only visible inside */
   clip-path: polygon(0% 0, 100% 0%, 100% 100%, 0 100%);
 }
 
