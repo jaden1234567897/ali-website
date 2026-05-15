@@ -204,28 +204,6 @@ export default function CoinField() {
           const inner = new THREE.Group()
           const model = proto.clone(true)
 
-          // Defensive material clone — on weak / integrated GPUs the
-          // PMREM-generated RoomEnvironment fails silently, leaving fully-
-          // metallic materials with nothing to reflect (they render pure
-          // black). Capping metalness at 0.85, lifting roughness, and
-          // adding a small emissive tint keeps the coin visibly silver
-          // even when no environment map is bound. envMapIntensity is
-          // bumped so good-GPU renders still pick up the full reflection.
-          model.traverse(obj => {
-            const mesh = obj as import('three').Mesh
-            if (!mesh.isMesh || !mesh.material) return
-            const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-            const fixed = list.map(m => {
-              const c = m.clone() as import('three').MeshStandardMaterial
-              if (typeof c.metalness === 'number') c.metalness = Math.min(c.metalness, 0.85)
-              if (typeof c.roughness === 'number') c.roughness = Math.max(c.roughness, 0.18)
-              if (c.emissive) c.emissive = new THREE.Color('#2a2a2a')
-              if (typeof c.envMapIntensity === 'number') c.envMapIntensity = 1.5
-              return c
-            })
-            mesh.material = fixed.length === 1 ? fixed[0] : fixed
-          })
-
           const label = new THREE.Mesh(
             new THREE.PlaneGeometry(0.92, 0.22),
             new THREE.MeshBasicMaterial({
