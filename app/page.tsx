@@ -8,7 +8,10 @@ import AliAbout from './components/ali/AliAbout'
 // Positioned right before AliBooking so the four engagement options sit
 // next to the "book a call" CTA as the closing conversion block.
 import AliTierCards from './components/ali/AliTierCards'
-import AliBridge from './components/ali/AliBridge'
+// ali-v3 swap: AliBridge (pinned triangle choreography) → AliCoinTrio
+// (three stacked coin+bullets panels, one per coin). Calmer, scannable
+// layout; matches the screenshot reference Ali approved.
+import AliCoinTrio from './components/ali/AliCoinTrio'
 import AliCurvedAI from './components/ali/AliCurvedAI'
 // ali-v3: AliServices removed — the four engagements live only in the
 // Tier Cards section now, so this "Four ways we work together" panel
@@ -64,8 +67,9 @@ export default function Home() {
         {/* About Ali — cinematic pinned reveal (replaces the Bridging the Gap timeline) */}
         <AliAbout />
 
-        {/* Bridge — pinned scroll: text reveal + 3 coins forming a bridge with AI as keystone */}
-        <AliBridge />
+        {/* ali-v3: 3 stacked coin+bullets panels (Strategy / Execution / AI)
+            replaces the pinned-triangle AliBridge */}
+        <AliCoinTrio />
 
         {/* Curved AI screenshot slider */}
         <AliCurvedAI />
