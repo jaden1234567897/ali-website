@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react'
 import { CalendarClock, Menu, X } from 'lucide-react'
 
+// ali-v3: nav trimmed — Products, AI, and Process removed. The Tier Cards
+// + Booking sections now carry the "engagements" story; AI is folded into
+// The Gap section; Process is gone entirely.
 const LINKS = [
   { href: '#bridge', label: 'The Gap' },
-  { href: '#products', label: 'Products' },
-  { href: '#ai', label: 'AI' },
   { href: '#about', label: 'About' },
   { href: '#services', label: 'Services' },
-  { href: '#process', label: 'Process' },
 ]
 
 export default function AliNav() {

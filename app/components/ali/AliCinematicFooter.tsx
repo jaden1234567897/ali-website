@@ -95,7 +95,6 @@ const MARQUEE = (
 
 export default function AliCinematicFooter() {
   const wrapperRef = useRef<HTMLDivElement>(null)
-  const giantRef = useRef<HTMLDivElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const actionsRef = useRef<HTMLDivElement>(null)
 
@@ -103,23 +102,8 @@ export default function AliCinematicFooter() {
     if (typeof window === 'undefined' || !wrapperRef.current) return
 
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        giantRef.current,
-        { y: '12vh', scale: 0.84, opacity: 0 },
-        {
-          y: '0vh',
-          scale: 1,
-          opacity: 1,
-          ease: 'power1.out',
-          scrollTrigger: {
-            trigger: wrapperRef.current,
-            start: 'top 80%',
-            end: 'bottom bottom',
-            scrub: 1,
-          },
-        },
-      )
-
+      // ali-v3: removed the giant EXECUTION backdrop animation. Heading +
+      // actions still scroll-fade-up together.
       gsap.fromTo(
         [headingRef.current, actionsRef.current],
         { y: 50, opacity: 0 },
@@ -152,9 +136,8 @@ export default function AliCinematicFooter() {
       <footer className="ali-cinematic">
         <div className="ali-cinematic-aurora" aria-hidden="true" />
         <div className="ali-cinematic-grid" aria-hidden="true" />
-        <div ref={giantRef} className="ali-cinematic-giant" aria-hidden="true">
-          EXECUTION
-        </div>
+        {/* ali-v3: removed the giant EXECUTION backdrop word — too dominant
+            against the cream brand. */}
 
         <div className="ali-cinematic-marquee">
           <div className="ali-cinematic-marquee-track">
@@ -165,7 +148,7 @@ export default function AliCinematicFooter() {
 
         <div className="ali-cinematic-center">
           <h2 ref={headingRef} className="ali-cinematic-heading">
-            Ready to close the gap?
+            Now, the <em>harder part</em>.
           </h2>
 
           <div ref={actionsRef} className="ali-cinematic-actions">
