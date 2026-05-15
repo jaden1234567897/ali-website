@@ -210,21 +210,14 @@ export default function CoinField() {
               map: createLabelTexture(coinLabels[index]),
               transparent: true,
               depthWrite: false,
-              depthTest: false,
               side: THREE.DoubleSide,
             }),
           )
-          // renderOrder + depthTest:false guarantees the label paints AFTER
-          // the coin face — fixes engraving disappearing into z-fighting on
-          // GPUs with low depth-buffer precision.
-          label.renderOrder = 2
 
           model.position.sub(center)
           const normalizedScale = 1.42 / maxAxis
           model.scale.set(normalizedScale, normalizedScale, normalizedScale * coinDepth)
-          // Push the label a touch further forward (0.012 → 0.024) so it
-          // clears the coin surface comfortably even at low z precision.
-          label.position.z = faceZ + 0.012
+          label.position.z = faceZ
           inner.add(model)
           inner.add(label)
           outer.add(inner)

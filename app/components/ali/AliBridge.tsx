@@ -671,21 +671,14 @@ export default function AliBridge() {
               map: createLabelTexture(labelText),
               transparent: true,
               depthWrite: false,
-              // depthTest:false + renderOrder forces the engraving to paint
-              // AFTER the coin face regardless of depth-buffer precision —
-              // fixes label vanishing into z-fighting on low-end GPUs.
-              depthTest: false,
               side: THREE.DoubleSide,
             }),
           )
-          labelMesh.renderOrder = 2
 
           model.position.sub(center)
           const normalizedScale = 1.42 / maxAxis
           model.scale.set(normalizedScale, normalizedScale, normalizedScale * coinDepth)
-          // Push the label slightly further off the coin face (was 0.012 baked
-          // into faceZ) so it sits cleanly above the surface even on weak GPUs.
-          labelMesh.position.z = faceZ + 0.012
+          labelMesh.position.z = faceZ
 
           const materials: import('three').Material[] = []
           model.traverse(obj => {
