@@ -4877,6 +4877,9 @@ h1 span {
 @media (min-width: 768px) {
   .ali-sf-bottom-right {
     text-align: right;
+    /* Pull the social pills + copyright in from the right edge so the
+       fixed WhatsApp float button doesn't sit on top of them on desktop. */
+    padding-right: clamp(60px, 7vw, 96px);
   }
 }
 
