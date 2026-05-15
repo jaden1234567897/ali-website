@@ -143,9 +143,9 @@ const executionSoloPosesMobile = [
 ]
 
 // ali-v3: the middle coin is now ARTIFICIAL INTELLIGENCE (was GOVERNANCE).
-// Two-line label because the text is too long to read at one line on the
-// coin face — createLabelTexture splits on the newline character.
-const COIN_LABELS = ['STRATEGY', 'ARTIFICIAL\nINTELLIGENCE', 'EXECUTION']
+// Stored as a space-separated single string — createLabelTexture decides
+// whether to wrap onto two lines based on viewport (mobile only).
+const COIN_LABELS = ['STRATEGY', 'ARTIFICIAL INTELLIGENCE', 'EXECUTION']
 
 const styles = {
   section: {
@@ -309,6 +309,17 @@ const MY_ROLE = [
   'build operating models that work under pressure, not just on paper',
 ]
 
+// ali-v3: placeholder bullets for the AI solo phase. Same blur-up reveal
+// animation as WHY_FAILS — Ali will swap these for real content later.
+const AI_POINTS = [
+  'prompts that survive board scrutiny',
+  'frameworks (OGSM, SWOT) you can run weekly',
+  'evidence stronger, faster — fewer blind spots',
+  'planning tools that compress reporting cycles',
+  'diagnostics that name the breakage between intent and delivery',
+  'reviews that ask sharper questions, not bigger packs',
+]
+
 export default function AliBridge() {
   const sectionRef = useRef<HTMLElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -318,8 +329,11 @@ export default function AliBridge() {
   const rightColRef = useRef<HTMLDivElement>(null)
   const leftBulletsRef = useRef<(HTMLLIElement | null)[]>([])
   const rightBulletsRef = useRef<(HTMLLIElement | null)[]>([])
+  const aiBulletsRef = useRef<(HTMLLIElement | null)[]>([])
   const leftHeaderRef = useRef<HTMLHeadingElement>(null)
   const rightHeaderRef = useRef<HTMLHeadingElement>(null)
+  const aiHeaderRef = useRef<HTMLHeadingElement>(null)
+  const aiColRef = useRef<HTMLDivElement>(null)
 
   // ── ScrollTrigger: drive bridge progress + paragraph + side columns ──
   useEffect(() => {
@@ -334,8 +348,10 @@ export default function AliBridge() {
       gsap.set(paragraphRef.current, { opacity: 0, y: 260 })
       gsap.set(leftHeaderRef.current, { opacity: 0, y: 18, filter: 'blur(8px)' })
       gsap.set(rightHeaderRef.current, { opacity: 0, y: 18, filter: 'blur(8px)' })
+      gsap.set(aiHeaderRef.current, { opacity: 0, y: 18, filter: 'blur(8px)' })
       gsap.set(leftBulletsRef.current, { opacity: 0, y: 18, filter: 'blur(8px)' })
       gsap.set(rightBulletsRef.current, { opacity: 0, y: 18, filter: 'blur(8px)' })
+      gsap.set(aiBulletsRef.current, { opacity: 0, y: 18, filter: 'blur(8px)' })
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -401,8 +417,38 @@ export default function AliBridge() {
         0.84,
       )
 
-      // ── Phase F: Governance + Execution arrive at centre, lift, then
-      //    "My role" reveals (same LEFT column, replacing "Why fails") ──
+      // ── Phase F (ali-v3): AI solo — random points reveal on LEFT, same
+      //    blur-up animation as "Why strategy fails". Mirrors the Strategy
+      //    zoom panel exactly so the two coins feel like equal beats. ──
+      tl.to(
+        aiHeaderRef.current,
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.04 },
+        0.87,
+      )
+      tl.to(
+        aiBulletsRef.current,
+        {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          stagger: 0.014,
+          duration: 0.04,
+        },
+        0.89,
+      )
+      // AI text fades out as the Execution solo begins.
+      tl.to(
+        aiHeaderRef.current,
+        { opacity: 0, filter: 'blur(6px)', duration: 0.04 },
+        0.94,
+      )
+      tl.to(
+        aiBulletsRef.current,
+        { opacity: 0, filter: 'blur(6px)', stagger: 0.005, duration: 0.04 },
+        0.94,
+      )
+
+      // ── Phase G: Execution solo — "My role" reveals on LEFT ──
       tl.to(
         rightHeaderRef.current,
         { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.04 },
@@ -538,15 +584,22 @@ export default function AliBridge() {
       const groups: CoinGroup[] = []
 
       const createLabelTexture = (label: string) => {
-        const lines = label.split('\n')
+        // ali-v3: long labels wrap to two lines ONLY on mobile, same logic
+        // as the hero coins. Desktop renders ARTIFICIAL INTELLIGENCE as a
+        // single line (auto-scaled horizontally to fit the coin face).
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+        const tooLong = label.length > 12
+        const firstSpace = label.indexOf(' ')
+        const lines =
+          isMobile && tooLong && firstSpace > 0
+            ? [label.slice(0, firstSpace), label.slice(firstSpace + 1)]
+            : [label]
         const canvas = document.createElement('canvas')
         canvas.width = 1024
         canvas.height = 256
         const ctx = canvas.getContext('2d')
         if (ctx) {
-          // Multi-line labels (e.g. ARTIFICIAL / INTELLIGENCE) need a
-          // smaller per-line font so two lines fit on the coin face.
-          const fontSize = lines.length > 1 ? 86 : 125
+          const fontSize = lines.length > 1 ? 92 : 125
           const lineHeight = fontSize * 1.05
           const maxTextWidth = canvas.width - 20
           ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -554,7 +607,6 @@ export default function AliBridge() {
           ctx.font = `700 ${fontSize}px Arial, sans-serif`
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
-          // Vertically centre the block of lines on the coin face.
           const totalH = (lines.length - 1) * lineHeight
           const startY = canvas.height / 2 - totalH / 2 + 4
           lines.forEach((line, i) => {
@@ -949,7 +1001,32 @@ export default function AliBridge() {
           </ul>
         </div>
 
-        {/* Right column — My role */}
+        {/* AI column — random points (ali-v3, shown during AI solo phase) */}
+        <div
+          ref={aiColRef}
+          className="ali-bridge-col ali-bridge-col--left"
+          style={styles.leftColumn}
+        >
+          <h3 ref={aiHeaderRef} style={styles.columnHeader}>
+            Where AI sharpens the work:
+          </h3>
+          <ul style={styles.bulletList}>
+            {AI_POINTS.map((item, i) => (
+              <li
+                key={item}
+                ref={el => {
+                  aiBulletsRef.current[i] = el
+                }}
+                style={styles.bullet}
+              >
+                <span style={styles.bulletDot} aria-hidden="true" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Right column — My role (shown during Execution solo phase) */}
         <div
           ref={rightColRef}
           className="ali-bridge-col ali-bridge-col--right"

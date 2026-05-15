@@ -145,28 +145,40 @@ export default function CoinField() {
       }
 
       const createLabelTexture = (label: string) => {
-        const longLabel = label.length > 12
+        // ali-v3: long labels (e.g. ARTIFICIAL INTELLIGENCE) wrap to two
+        // lines ONLY on mobile. Desktop keeps the single horizontal line
+        // because the coin face has enough horizontal room there.
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+        const tooLong = label.length > 12
+        const firstSpace = label.indexOf(' ')
+        const lines =
+          isMobile && tooLong && firstSpace > 0
+            ? [label.slice(0, firstSpace), label.slice(firstSpace + 1)]
+            : [label]
         const canvas = document.createElement('canvas')
         canvas.width = 1024
         canvas.height = 256
         const context = canvas.getContext('2d')
 
         if (context) {
-          const fontSize = 125
-          // Reduced long-label padding so "ARTIFICIAL INTELLIGENCE" gets
-          // more horizontal room — the canvas-scale compression is gentler,
-          // so the text reads more stretched and clearer on the coin.
-          const maxTextWidth = canvas.width - (longLabel ? 20 : 0)
+          const fontSize = lines.length > 1 ? 92 : 125
+          const lineHeight = fontSize * 1.05
+          const maxTextWidth = canvas.width - 20
           context.clearRect(0, 0, canvas.width, canvas.height)
           context.fillStyle = '#202328'
           context.font = `700 ${fontSize}px Arial, sans-serif`
           context.textAlign = 'center'
           context.textBaseline = 'middle'
-          context.save()
-          context.translate(canvas.width / 2, canvas.height / 2 + 4)
-          context.scale(Math.min(1, maxTextWidth / context.measureText(label).width), 1)
-          context.fillText(label, 0, 0)
-          context.restore()
+          const totalH = (lines.length - 1) * lineHeight
+          const startY = canvas.height / 2 - totalH / 2 + 4
+          lines.forEach((line, i) => {
+            const widthScale = Math.min(1, maxTextWidth / context.measureText(line).width)
+            context.save()
+            context.translate(canvas.width / 2, startY + i * lineHeight)
+            context.scale(widthScale, 1)
+            context.fillText(line, 0, 0)
+            context.restore()
+          })
         }
 
         const texture = new THREE.CanvasTexture(canvas)
