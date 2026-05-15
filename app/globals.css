@@ -4692,9 +4692,12 @@ h1 span {
   position: relative;
   width: 100%;
   height: 100%;
+  /* Same cool-cream as the rest of the site (var(--ali-cream) = #F8F6F2)
+     with a barely-perceptible soft gradient for depth — no warm/yellow
+     tint. Was #f8f3e3 → #ece2c8 → #f5efde which read as yellow. */
   background:
-    linear-gradient(180deg, rgba(13, 13, 13, 0.04), transparent 30%),
-    linear-gradient(135deg, #f8f3e3 0%, #ece2c8 50%, #f5efde 100%);
+    linear-gradient(180deg, rgba(13, 13, 13, 0.03), transparent 30%),
+    linear-gradient(135deg, var(--ali-cream) 0%, #f1efe9 100%);
   color: var(--ali-ink);
   padding: clamp(24px, 4vw, 56px) clamp(20px, 5vw, 80px);
   display: flex;
@@ -4707,7 +4710,7 @@ h1 span {
 .ali-sf-veil {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(245, 239, 222, 0.4), transparent);
+  background: linear-gradient(to bottom, rgba(248, 246, 242, 0.4), transparent);
   pointer-events: none;
   z-index: 0;
 }
@@ -4722,16 +4725,18 @@ h1 span {
   z-index: 0;
 }
 
+/* Orbs now use a neutral cool-ink wash instead of gold — keeps the
+   "atmosphere" effect without the warm yellow cast. */
 .ali-sf-orb--tr {
   top: -10%;
   right: -8%;
-  background: radial-gradient(circle, rgba(196, 151, 58, 0.22) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(13, 13, 13, 0.06) 0%, transparent 70%);
 }
 
 .ali-sf-orb--bl {
   bottom: -10%;
   left: -8%;
-  background: radial-gradient(circle, rgba(196, 151, 58, 0.14) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(13, 13, 13, 0.04) 0%, transparent 70%);
 }
 
 /* ── Nav grid ── */
