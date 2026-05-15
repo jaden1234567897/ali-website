@@ -83,50 +83,23 @@ function useMagnetic(ref: React.RefObject<HTMLElement | null>) {
   }, [ref])
 }
 
-const MARQUEE = (
-  <div className="ali-cinematic-marquee-item">
-    <span>Bridging Strategy & Execution<i>✦</i></span>
-    <span>Governance That Delivers<i>✦</i></span>
-    <span>AI-Sharper Decisions<i>✦</i></span>
-    <span>Ownership & Accountability<i>✦</i></span>
-    <span>From Slide to Outcome<i>✦</i></span>
-  </div>
-)
-
 export default function AliCinematicFooter() {
   const wrapperRef = useRef<HTMLDivElement>(null)
-  const giantRef = useRef<HTMLDivElement>(null)
-  const headingRef = useRef<HTMLHeadingElement>(null)
   const actionsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined' || !wrapperRef.current) return
 
     const ctx = gsap.context(() => {
+      // ali-v3: giant EXECUTION banner + "Ready to close the gap?" heading
+      // were removed for the new footer direction. Only the action pills
+      // get the scroll-fade-up reveal now.
       gsap.fromTo(
-        giantRef.current,
-        { y: '12vh', scale: 0.84, opacity: 0 },
-        {
-          y: '0vh',
-          scale: 1,
-          opacity: 1,
-          ease: 'power1.out',
-          scrollTrigger: {
-            trigger: wrapperRef.current,
-            start: 'top 80%',
-            end: 'bottom bottom',
-            scrub: 1,
-          },
-        },
-      )
-
-      gsap.fromTo(
-        [headingRef.current, actionsRef.current],
+        actionsRef.current,
         { y: 50, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          stagger: 0.15,
           ease: 'power3.out',
           scrollTrigger: {
             trigger: wrapperRef.current,
@@ -152,22 +125,12 @@ export default function AliCinematicFooter() {
       <footer className="ali-cinematic">
         <div className="ali-cinematic-aurora" aria-hidden="true" />
         <div className="ali-cinematic-grid" aria-hidden="true" />
-        <div ref={giantRef} className="ali-cinematic-giant" aria-hidden="true">
-          EXECUTION
-        </div>
-
-        <div className="ali-cinematic-marquee">
-          <div className="ali-cinematic-marquee-track">
-            {MARQUEE}
-            {MARQUEE}
-          </div>
-        </div>
+        {/* ali-v3: giant EXECUTION banner + scrolling marquee removed for
+            new footer direction. The "Ready to close the gap?" headline
+            was also dropped because that CTA already lives in the
+            booking section above the footer. */}
 
         <div className="ali-cinematic-center">
-          <h2 ref={headingRef} className="ali-cinematic-heading">
-            Ready to close the gap?
-          </h2>
-
           <div ref={actionsRef} className="ali-cinematic-actions">
             <div className="ali-cinematic-row">
               <MagneticAnchor href="#book" className="ali-pill">
