@@ -3892,6 +3892,39 @@ h1 span {
   transform: rotateY(180deg);
 }
 
+/* ali-v3: BACK face of the flip card is WHITE — flipped colour scheme
+   from the front. Same dark-to-light card silhouette, just inverted so
+   the front reads as "the cover" and the back as "the inside spread". */
+.ali-flip-face--back.ali-course-card {
+  background:
+    linear-gradient(90deg, rgba(13, 13, 13, 0.06), transparent 14px),
+    linear-gradient(135deg, #ffffff, #faf6e8);
+  border: 1px solid rgba(196, 151, 58, 0.30);
+  color: var(--ali-ink);
+}
+.ali-flip-face--back .ali-course-card-eyebrow {
+  /* Stays gold — same accent role on both faces */
+  color: var(--ali-gold);
+}
+.ali-flip-face--back .ali-course-card-title {
+  color: var(--ali-ink);
+}
+.ali-flip-face--back .ali-course-card-tagline {
+  color: var(--ali-muted);
+}
+.ali-flip-face--back .ali-course-card-modules {
+  border-top-color: var(--ali-line);
+}
+.ali-flip-face--back .ali-course-card-modules li {
+  color: var(--ali-ink);
+}
+.ali-flip-face--back .ali-course-card-module-num {
+  color: var(--ali-gold);
+}
+.ali-flip-face--back .ali-course-card-tag {
+  color: var(--ali-gold);
+}
+
 .ali-flip-hint {
   position: absolute;
   bottom: 14px;

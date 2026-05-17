@@ -185,15 +185,16 @@ const styles = {
     zIndex: 1,
     perspective: 1400,
   } as const,
+  // ali-v3: weight + tracking tuned to match the hero h1 feel (400, tight).
   paragraph: {
     width: '92%',
     maxWidth: 980,
     textAlign: 'center',
     fontFamily: 'var(--font-display)',
     fontSize: 'clamp(22px, 2.6vw, 36px)',
-    fontWeight: 500,
+    fontWeight: 400,
     lineHeight: 1.32,
-    letterSpacing: '-0.015em',
+    letterSpacing: '-0.035em',
     color: 'var(--ali-ink)',
   } as const,
   paragraphTilt: {
@@ -207,11 +208,12 @@ const styles = {
   // Highlighted "punch" line — larger, italic, dramatic. The third line of
   // the paragraph (No one owns what's in between.) lands as the emotional
   // pivot of the whole section.
+  // ali-v3: italics use weight 500 like the hero's italic <em>, not 600/700.
   lineHighlight: {
     fontSize: 'clamp(30px, 3.8vw, 50px)',
-    fontWeight: 600,
+    fontWeight: 500,
     fontStyle: 'italic',
-    letterSpacing: '-0.025em',
+    letterSpacing: '-0.045em',
     lineHeight: 1.15,
     margin: '18px 0',
     color: 'var(--ali-ink)',
@@ -219,17 +221,18 @@ const styles = {
   goldHighlight: {
     color: 'var(--ali-gold)',
     fontStyle: 'italic',
-    fontWeight: 600,
+    fontWeight: 500,
+    letterSpacing: '-0.025em',
   } as const,
   italicWord: {
     fontStyle: 'italic',
     color: 'var(--ali-ink)',
-    fontWeight: 600,
+    fontWeight: 500,
   } as const,
   italicGold: {
     fontStyle: 'italic',
     color: 'var(--ali-gold)',
-    fontWeight: 700,
+    fontWeight: 500,
   } as const,
   // BOTH columns sit on the LEFT (coins move to right side in zoom + duo).
   // They sequence: "Why fails" first (during Strategy zoom), then "My role"
@@ -252,28 +255,31 @@ const styles = {
     zIndex: 3,
     pointerEvents: 'none',
   } as const,
+  // ali-v3: header weight + tracking match the hero h1 (400, tight).
   columnHeader: {
     fontFamily: 'var(--font-display)',
     fontSize: 'clamp(20px, 1.85vw, 30px)',
-    fontWeight: 600,
+    fontWeight: 400,
     color: 'var(--ali-ink)',
     marginBottom: 24,
     lineHeight: 1.3,
-    letterSpacing: '-0.01em',
+    letterSpacing: '-0.035em',
   } as const,
   bulletList: {
     margin: 0,
     padding: 0,
     listStyle: 'none',
   } as const,
+  // ali-v3: bullets match the hero h1 weight/tracking (400, tight).
   bullet: {
     fontFamily: 'var(--font-display)',
     fontSize: 'clamp(17px, 1.55vw, 22px)',
-    fontWeight: 500,
+    fontWeight: 400,
     lineHeight: 1.5,
     color: 'var(--ali-ink)',
     marginBottom: 14,
     paddingLeft: 22,
+    letterSpacing: '-0.025em',
     position: 'relative',
     willChange: 'transform, opacity, filter',
   } as const,
